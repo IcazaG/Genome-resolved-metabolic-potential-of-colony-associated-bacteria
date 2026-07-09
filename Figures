@@ -1,1 +1,273 @@
+# ==============================================================================
+# COMPOSITE FIGURE — EL LOTO MANUSCRIPT
+#
+# (A) Phylum-level relative abundance across enrichment passages
+# (B) Phylogenomic tree of metagenome-assembled genomes (MAGs)
+# (C) Completeness and contamination per MAG
+# ==============================================================================
 
+# ------------------------------------------------------------------------------
+# 0. Required packages
+# ------------------------------------------------------------------------------
+library(tidyverse)
+library(patchwork)
+library(ape)
+library(ggtree)
+library(readxl)
+
+# ------------------------------------------------------------------------------
+# 0.1 Paths
+# ------------------------------------------------------------------------------
+data_dir   <- "data"
+figure_dir <- "Figures"
+
+if (!dir.exists(figure_dir)) dir.create(figure_dir)
+
+# ==============================================================================
+# PANEL A: Phylum-level relative abundance
+# ==============================================================================
+
+# Map internal sample codes to enrichment passage labels (E1-E7)
+sample_map <- c(
+  "C1" = "E1", "C2" = "E2", "C3" = "E3",
+  "Y1" = "E4", "Y2" = "E5", "Y3" = "E6", "Y4" = "E7"
+)
+sample_levels <- paste0("E", 1:7)
+
+# Load phylum-level abundance table
+tax_phylum <- read_tsv(
+  file.path(data_dir, "tax.Phylum.raw.txt"),
+  show_col_types = FALSE
+)
+colnames(tax_phylum)[1] <- "Phylum"
+
+# Compute relative abundance and update phylum nomenclature to current GTDB taxonomy
+tax_phylum_plot <- tax_phylum %>%
+  pivot_longer(-Phylum, names_to = "Sample", values_to = "Abundance") %>%
+  group_by(Sample) %>%
+  mutate(RelAbundance = Abundance / sum(Abundance)) %>%
+  ungroup() %>%
+  mutate(
+    Phylum = recode(Phylum,
+                     "Proteobacteria" = "Pseudomonadota",
+                     "Bacteroidetes"  = "Bacteroidota",
+                     "Cyanobacteria"  = "Cyanobacteriota",
+                     "Actinobacteria" = "Actinomycetota")
+  )
+
+# Load phylum color palette
+phylum_colors_df <- read_delim(
+  file.path(data_dir, "ehi_phylum_colors.csv"),
+  delim = ";", show_col_types = FALSE
+)
+phylum_colors <- setNames(phylum_colors_df$colors, phylum_colors_df$phylum)
+phylum_colors["Other"] <- "#CCCCCC"
+
+# Collapse low-abundance and non-target phyla into an "Other" category
+threshold <- 0.01
+tax_phylum_plot <- tax_phylum_plot %>%
+  group_by(Phylum) %>%
+  mutate(mean_abundance = mean(RelAbundance)) %>%
+  ungroup() %>%
+  mutate(
+    Phylum_plot = case_when(
+      Phylum %in% c("Chordata", "Unassigned") ~ "Other",
+      mean_abundance < threshold               ~ "Other",
+      TRUE                                     ~ Phylum
+    )
+  ) %>%
+  group_by(Sample, Phylum_plot) %>%
+  summarise(RelAbundance = sum(RelAbundance), .groups = "drop") %>%
+  mutate(Sample = recode(Sample, !!!sample_map))
+
+tax_phylum_plot$Sample <- factor(tax_phylum_plot$Sample, levels = sample_levels)
+
+# Order phyla by mean relative abundance for a consistent stacking order
+phylum_order <- tax_phylum_plot %>%
+  group_by(Phylum_plot) %>%
+  summarise(mean_abundance = mean(RelAbundance)) %>%
+  arrange(mean_abundance) %>%
+  pull(Phylum_plot)
+tax_phylum_plot$Phylum_plot <- factor(tax_phylum_plot$Phylum_plot, levels = phylum_order)
+
+pA <- ggplot(tax_phylum_plot, aes(x = Sample, y = RelAbundance, fill = Phylum_plot)) +
+  geom_col(width = 0.7, color = "black", linewidth = 0.2) +
+  scale_y_continuous(labels = scales::percent_format(), expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = phylum_colors) +
+  labs(x = NULL, y = "Relative abundance (%)", fill = "Phylum") +
+  theme_bw(base_size = 10) +
+  theme(
+    panel.grid       = element_blank(),
+    axis.text        = element_text(size = 9),
+    legend.position  = "bottom",
+    legend.key.size  = unit(0.4, "cm"),
+    legend.text      = element_text(size = 8),
+    legend.title     = element_text(size = 9),
+    plot.margin      = margin(10, 10, 10, 10)
+  ) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+
+# ==============================================================================
+# PANEL B: Phylogenomic tree
+# ==============================================================================
+
+mag_data <- as.data.frame(read_excel(file.path(data_dir, "tabla_MAGs.xlsx"), sheet = 1))
+tree     <- read.tree(file.path(data_dir, "itol.tree"))
+
+# Align MAG metadata to tree tip order
+mag_data <- mag_data[match(tree$tip.label, mag_data$ID), ]
+mag_data$Phylum <- gsub("^p__|^d__|^c__|^o__|^f__|^g__", "", mag_data$Phylum)
+
+# Phylum color palette (consistent with GTDB taxonomy used in Panel A)
+color_map <- c(
+  "Cyanobacteriota"   = "#086372",
+  "Bacteroidota"      = "#823838",
+  "Pseudomonadota"    = "#E0A608",
+  "Verrucomicrobiota" = "#AD8D8D",
+  "Armatimonadota"    = "#08B1B1",
+  "Planctomycetota"   = "#B59C9C",
+  "Gemmatimonadota"   = "#BE0808"
+)
+
+annotation_df <- data.frame(label = tree$tip.label, Phylum = mag_data$Phylum)
+
+# NOTE: Node numbers below (e.g., node = 48) are specific to this tree topology
+# and were identified manually via ggtree::geom_text(aes(label = node)).
+# Re-identify node IDs if the input tree changes.
+pB <- ggtree(tree, layout = "rectangular", size = 0.5) %<+% annotation_df +
+  geom_tiplab(
+    aes(color = Phylum),
+    size = 2.8,
+    align = TRUE,
+    linetype = "dotted",
+    linewidth = 0.4,
+    offset = 0.05,
+    face = "bold"
+  ) +
+  scale_color_manual(values = color_map) +
+  geom_nodepoint(size = 1) +
+
+  # Clade highlighting
+  geom_hilight(node = 48, fill = "#086372", alpha = 0.3) +
+  geom_hilight(node = 42, fill = "#B59C9C", alpha = 0.3) +
+  geom_hilight(node = 47, fill = "#08B1B1", alpha = 0.3) +
+  geom_hilight(node = 51, fill = "#823838", alpha = 0.3) +
+  geom_hilight(node = 64, fill = "#E0A608", alpha = 0.3) +
+
+  # Clade labels with vertical bars (Nature-style annotation)
+  geom_cladelabel(node = 64, label = "Pseudomonadota",  align = TRUE, offset = 0.25, barsize = 2, color = "#E0A608", textcolor = "black", fontsize = 4, offset.text = 0.05) +
+  geom_cladelabel(node = 51, label = "Bacteroidota",    align = TRUE, offset = 0.25, barsize = 2, color = "#823838", textcolor = "black", fontsize = 4, offset.text = 0.05) +
+  geom_cladelabel(node = 42, label = "Planctomycetota",  align = TRUE, offset = 0.25, barsize = 2, color = "#B59C9C", textcolor = "black", fontsize = 4, offset.text = 0.05) +
+  geom_cladelabel(node = 48, label = "Cyanobacteriota",  align = TRUE, offset = 0.25, barsize = 2, color = "#086372", textcolor = "black", fontsize = 4, offset.text = 0.05) +
+  geom_cladelabel(node = 47, label = "Armatimonadota",   align = TRUE, offset = 0.25, barsize = 2, color = "#08B1B1", textcolor = "black", fontsize = 4, offset.text = 0.05) +
+
+  theme_tree2() +
+  scale_x_continuous(
+    expand = expansion(mult = c(0, 0.45)),  # extra space to accommodate long phylum labels
+    breaks = function(x) {
+      b <- scales::extended_breaks()(x)
+      b[b < 1.1]
+    }
+  ) +
+  theme(
+    legend.position = "none",  # phylum color legend is redundant with clade labels
+    axis.text.x     = element_text(size = 9),
+    axis.title.x    = element_text(size = 10),
+    plot.margin     = margin(10, 10, 10, 10)
+  ) +
+  labs(x = "Substitutions per site")
+
+# ==============================================================================
+# PANEL C: MAG completeness and contamination
+# ==============================================================================
+
+# Preserve tree tip ordering for consistent panel alignment
+pB_data   <- pB$data
+tip_order <- pB_data %>% filter(isTip) %>% arrange(desc(y)) %>% pull(label)
+
+df_c <- data.frame(
+  MAG           = tree$tip.label,
+  Completeness  = mag_data$completeness,
+  Contamination = mag_data$contamination
+)
+
+df_c_long <- df_c %>%
+  pivot_longer(cols = c(Completeness, Contamination), names_to = "Metric", values_to = "Value") %>%
+  mutate(Metric = factor(Metric,
+                          levels = c("Completeness", "Contamination"),
+                          labels = c("Completeness (%)", "Contamination")))
+
+df_c_long$MAG <- factor(df_c_long$MAG, levels = rev(tip_order))
+
+# Color MAG labels by phylum to visually link Panel C to Panel B
+axis_mags   <- levels(df_c_long$MAG)
+axis_phyla  <- mag_data$Phylum[match(axis_mags, mag_data$ID)]
+axis_colors <- color_map[axis_phyla]
+axis_colors[is.na(axis_colors)] <- "#000000"
+
+pC <- ggplot(df_c_long, aes(y = MAG)) +
+  geom_col(aes(x = 100), fill = "gray80", width = 0.7) +          # background reference bar (0-100%)
+  geom_col(aes(x = Value, fill = Metric), width = 0.7) +
+  facet_wrap(~ Metric, scales = "free_x") +
+  scale_fill_manual(values = c("Completeness (%)" = "#F8961E", "Contamination" = "#F94144")) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+  scale_y_discrete(drop = FALSE) +
+  theme_classic(base_size = 10) +
+  theme(
+    legend.position  = "none",
+    axis.title       = element_blank(),
+    axis.text.y      = element_text(size = 6.5, color = axis_colors, face = "bold"),
+    axis.text.x      = element_text(size = 8),
+    strip.background = element_blank(),
+    strip.text       = element_text(size = 9, face = "bold"),
+    axis.line.y      = element_blank(),
+    axis.ticks.y     = element_blank(),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+# ==============================================================================
+# FINAL ASSEMBLY (patchwork)
+# ==============================================================================
+
+design_layout <- "
+  AB
+  CB
+"
+
+combined <- wrap_plots(
+  A = pA,
+  B = pB,
+  C = pC,
+  design  = design_layout,
+  widths  = c(1, 1.8),
+  heights = c(1, 1.9)
+) +
+  plot_annotation(
+    tag_levels = "A",
+    theme = theme(plot.tag = element_text(size = 18, face = "bold"))
+  )
+
+# ==============================================================================
+# EXPORT
+# ==============================================================================
+
+ggsave(
+  file.path(figure_dir, "Figure_3panels_composite.pdf"),
+  combined,
+  width  = 10,
+  height = 8,
+  units  = "in",
+  dpi    = 300
+)
+
+ggsave(
+  file.path(figure_dir, "Figure_3panels_composite.png"),
+  combined,
+  width  = 13.5,
+  height = 8,
+  units  = "in",
+  dpi    = 300,
+  bg     = "white"
+)
+
+message("Composite figure generated successfully.")
