@@ -2,8 +2,8 @@
 
 ## 1. Quality Control
 
-fastp v0.23.0 — quality filtering (minimum Phred score Q20, minimum read length 50 bp)
-KneadData v0.12.4 (+ Bowtie2) — removal of human contamination (hg38 reference)
+fastp v0.23.0, quality filtering (minimum Phred score Q20, minimum read length 50 bp)
+KneadData v0.12.4 (+ Bowtie2),  removal of human contamination (hg38 reference)
 
 ## 2. Assembly and Gene Catalog Construction
 
