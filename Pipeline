@@ -1,1 +1,251 @@
+#!/usr/bin/env bash
+###############################################################################
+# Metagenomic Assembly Pipeline
+# Adapted from the EasyMetagenome Pipeline
+#
+# Author:       Gonzalo Icaza
+# Affiliation:  Alexandrium catenella Monitoring Program
+#               Universidad San Sebastián, Lago Panguipulli 1390, Puerto Montt, Chile
+# Environment:  CentOS 
+# Executed on:  NLHPC (Laboratorio Nacional de Computación de Alto Rendimiento)
+#               Centro de Modelamiento Matemático (CMM), Universidad de Chile
+# Reference:    Bai et al. 2025. https://doi.org/10.1002/imt2.70001
+#
+# Description:
+#   End-to-end workflow for shotgun metagenomic data: raw read transfer,
+#   quality control, host decontamination, and de novo assembly
+#   (MEGAHIT / metaSPAdes) with QUAST-based assembly evaluation.
+#
+# Samples:
+#   Seven Microcystis aeruginosa enrichment passages (E1–E7), listed in
+#   result/metadata.txt. All steps below are metadata-driven (via the
+#   SampleID column), so no sample names are hardcoded in the script.
+###############################################################################
 
+set -euo pipefail
+
+###############################################################################
+# 0. DATA TRANSFER (run from local machine, PowerShell)
+###############################################################################
+# Example: transfer raw .fq.gz files from a local Windows machine to the cluster
+#
+#   $src = "C:\path\to\local\Easymetagenome"
+#   $dst = "user@cluster_address:/home/user/seq/"
+#   $files = Get-ChildItem -Path $src -Filter *.fq.gz -File | Select-Object -ExpandProperty FullName
+#   scp -P <port> $files $dst
+
+###############################################################################
+# 1. SETUP
+###############################################################################
+
+# Conda installation directory
+soft=~/miniconda3
+
+# Reference database directory
+db=~/db
+
+# Working directory
+wd=~/meta
+
+mkdir -p "$wd" && cd "$wd"
+mkdir -p seq temp result
+
+# Add software/scripts to PATH
+export PATH="$soft/bin:$soft/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$db/EasyMicrobiome/linux:$db/EasyMicrobiome/script"
+echo "$PATH"
+
+###############################################################################
+# 2. METADATA AND RAW SEQUENCE FILES
+###############################################################################
+
+mv metadata.txt result/metadata.txt
+
+# Inspect line-ending format (^I = tab, $ = Unix newline, ^M$ = Windows, ^M = Mac)
+cat -A result/metadata.txt
+
+# Convert Windows/Mac line endings to Unix
+sed -i 's/\r//' result/metadata.txt
+cat -A result/metadata.txt
+
+# Inspect raw file sizes
+ls -lsh seq/*.fq.gz
+
+# Basic sequence statistics
+conda activate kneaddata
+conda install -c conda-forge -c bioconda seqkit -y
+
+seqkit version
+time seqkit stat seq/*.fq.gz > result/seqkit.txt
+cat result/seqkit.txt
+
+# Example single-sample preview
+i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
+zless "seq/${i}_1.fq.gz" | head -n4
+
+###############################################################################
+# Working directory structure
+#
+# ├── pipeline.sh
+# ├── result          -> key output files, formatted figures, metadata.txt
+# │   └── metadata.txt
+# ├── seq              -> raw sequence files to be analyzed
+# │   ├── E1_1.fq.gz
+# │   ├── ...
+# │   └── E7_2.fq.gz
+# └── temp             -> temporary/intermediate files
+###############################################################################
+
+###############################################################################
+# 3. QUALITY CONTROL (fastp)
+###############################################################################
+
+mkdir -p temp/qc result/qc
+fastp --version
+
+# for Single-sample QC
+i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
+fastp -i "seq/${i}_1.fq.gz" -I "seq/${i}_2.fq.gz" \
+    -o "temp/qc/${i}_1.fastq" -O "temp/qc/${i}_2.fastq"
+
+# or Batch processing (parallel, -j = number of concurrent samples)
+time tail -n+2 result/metadata.txt | cut -f1 | rush -j 2 \
+    "fastp -i seq/{1}_1.fq.gz -I seq/{1}_2.fq.gz \
+    -j temp/qc/{1}_fastp.json -h temp/qc/{1}_fastp.html \
+    -o temp/qc/{1}_1.fastq  -O temp/qc/{1}_2.fastq \
+    > temp/qc/{1}.log 2>&1"
+
+# Summarize QC results (raw vs. clean read counts)
+echo -e "SampleID\tRaw\tClean" > temp/fastp
+for i in $(tail -n+2 result/metadata.txt | cut -f1); do
+    echo -e -n "$i\t" >> temp/fastp
+    grep 'total reads' "temp/qc/${i}.log" | uniq | cut -f2 -d ':' | tr '\n' '\t' >> temp/fastp
+    echo "" >> temp/fastp
+done
+
+sed -i 's/ //g;s/\t$//' temp/fastp
+
+# Sort summary according to metadata order
+awk 'BEGIN{FS=OFS="\t"} NR==FNR{a[$1]=$0} NR>FNR{print a[$1]}' temp/fastp result/metadata.txt \
+    > result/qc/fastp.txt
+
+cat result/qc/fastp.txt
+
+###############################################################################
+# 4. HOST READ REMOVAL (KneadData)
+###############################################################################
+# KneadData uses Bowtie2 to align reads against the host genome, then filters
+# out host-derived reads prior to downstream analysis.
+
+mkdir -p temp/hr
+conda activate kneaddata
+kneaddata --version   # v0.12.4
+
+# Single-sample host removal
+i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
+time kneaddata -i1 "temp/qc/${i}_1.fastq" -i2 "temp/qc/${i}_2.fastq" \
+    -o temp/hr \
+    --bypass-trim --bypass-trf --reorder \
+    --bowtie2-options '--very-sensitive --dovetail' \
+    -db "${db}/kneaddata/human/hg_39" \
+    --remove-intermediate-output -v -t 3
+
+# Batch host removal
+# NOTE: this step can require up to ~5x the space of the original data
+time tail -n+2 result/metadata.txt | cut -f1 | rush -j 2 \
+    "kneaddata \
+    -i1 temp/qc/{1}_1.fastq -i2 temp/qc/{1}_2.fastq \
+    -o temp/hr/ \
+    --bypass-trim --bypass-trf --reorder \
+    --bowtie2-options '--very-sensitive --dovetail' \
+    -db ${db}/kneaddata/human/hg_39 \
+    --remove-intermediate-output -v -t 3"
+
+# Check output file sizes (* = any characters, ? = single character)
+ls -shtr temp/hr/*_paired_?.fastq
+
+# Simplify filenames
+# Ubuntu:
+#   rename 's/_1_kneaddata_paired//' temp/hr/*.fastq
+# CentOS (cluster OS):
+rename '_1_kneaddata_paired' '' temp/hr/*.fastq
+
+# Summarize host-removal results
+kneaddata_read_count_table --input temp/hr --output temp/kneaddata.txt
+
+# Extract key columns from the summary
+cut -f 1,2,5,6 temp/kneaddata.txt | sed 's/_1_kneaddata//' > result/qc/sum.txt
+csvtk -t pretty result/qc/sum.txt
+
+# Verify paired-end read ID consistency
+i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
+paste <(head -n40 "temp/hr/${i}_1.fastq" | grep @) \
+      <(head -n40 "temp/hr/${i}_2.fastq" | grep @)
+
+# Clean up large intermediate files
+# (using the absolute path avoids interference from custom shell aliases)
+/bin/rm -rf temp/hr/*contam* temp/hr/*unmatched* temp/hr/reformatted* temp/hr/_temp*
+ls -l temp/hr/
+
+# Remove QC intermediates once host-removal results are confirmed
+rm temp/qc/*.fastq
+
+conda deactivate
+
+###############################################################################
+# 5. ASSEMBLY-BASED METHOD
+###############################################################################
+
+## 5.1 Assembly with MEGAHIT
+conda activate megahit
+megahit -v   # MEGAHIT v1.2.9
+
+# Remove existing output directory to allow re-running
+# /bin/rm -rf temp/megahit
+
+/usr/bin/time -v megahit -t 3 \
+    -1 "$(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_1.fastq/' | tr '\n' ',' | sed 's/,$//')" \
+    -2 "$(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_2.fastq/' | tr '\n' ',' | sed 's/,$//')" \
+    -o temp/megahit
+
+conda activate seqkit
+seqkit stat temp/megahit/final.contigs.fa
+
+# Preview first 6 lines, 60 characters each
+head -n6 temp/megahit/final.contigs.fa | cut -c1-60
+
+# Remove intermediate contig files
+/bin/rm -rf temp/megahit/intermediate_contigs
+
+## 5.2 Assembly with metaSPAdes (finer-scale alternative)
+mkdir -p temp/metaspades
+/usr/bin/time -v -o metaspades.py.log metaspades.py -t 3 -m 100 \
+    $(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_1.fastq/' | sed 's/^/-1 /' | tr '\n' ' ') \
+    $(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_2.fastq/' | sed 's/^/-2 /' | tr '\n' ' ') \
+    -o temp/metaspades
+
+# Check runtime (elapsed time) and memory usage (max resident set size)
+cat metaspades.py.log
+
+ls -sh temp/metaspades/contigs.fasta
+seqkit stat temp/metaspades/contigs.fasta
+
+# Keep main assembly output, remove temporary directory
+mv temp/metaspades/contigs.fasta temp/metaspades.fa
+/bin/rm -rf temp/metaspades/
+
+## 5.3 Assembly evaluation with QUAST
+mkdir -p result/megahit
+
+quast.py temp/megahit/final.contigs.fa \
+    -o result/megahit/quast -t 2
+
+# Optional: compare MEGAHIT vs. metaSPAdes assemblies
+quast.py --label "megahit,metaspades" \
+    temp/megahit/final.contigs.fa \
+    temp/metaspades.fa \
+    -o result/quast
+
+# Optional: MetaQUAST (more comprehensive evaluation; requires reference
+# database download and may take significant time depending on connection)
+time metaquast.py temp/megahit/final.contigs.fa \
+    -o result/megahit/metaquast
