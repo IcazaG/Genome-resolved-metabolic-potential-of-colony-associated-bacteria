@@ -25,13 +25,6 @@ if (!dir.exists(figure_dir)) dir.create(figure_dir)
 # PANEL A: Phylum-level relative abundance
 # ==============================================================================
 
-# Map internal sample codes to enrichment passage labels (E1-E7)
-sample_map <- c(
-  "C1" = "E1", "C2" = "E2", "C3" = "E3",
-  "Y1" = "E4", "Y2" = "E5", "Y3" = "E6", "Y4" = "E7"
-)
-sample_levels <- paste0("E", 1:7)
-
 # Load phylum-level abundance table
 tax_phylum <- read_tsv(
   file.path(data_dir, "tax.Phylum.raw.txt"),
