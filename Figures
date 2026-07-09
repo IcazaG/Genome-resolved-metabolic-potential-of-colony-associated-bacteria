@@ -1,7 +1,5 @@
 # ==============================================================================
-# COMPOSITE FIGURE — EL LOTO MANUSCRIPT
-#
-# (A) Phylum-level relative abundance across enrichment passages
+# (A) Phylum-level relative abundance 
 # (B) Phylogenomic tree of metagenome-assembled genomes (MAGs)
 # (C) Completeness and contamination per MAG
 # ==============================================================================
@@ -226,14 +224,13 @@ pC <- ggplot(df_c_long, aes(y = MAG)) +
   )
 
 # ==============================================================================
-# FINAL ASSEMBLY (patchwork)
+# FINAL ASSEMBLY 
 # ==============================================================================
 
 design_layout <- "
   AB
   CB
 "
-
 combined <- wrap_plots(
   A = pA,
   B = pB,
