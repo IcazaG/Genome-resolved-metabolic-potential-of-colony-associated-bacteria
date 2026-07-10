@@ -3,7 +3,7 @@
 # polls for completion, and downloads results.
 
 # -------------------- Configuration --------------------
-$MAGsDir = "C:\Users\gonzalo.icaza\OneDrive - Universidad San Sebastian\Investigacion - Programa A. catenella - Documents\General\Manuscrito-ElLoto\result\drep99\dereplicated_genomes"
+$MAGsDir = "yourDirectory"
 $OutputRoot = Join-Path $MAGsDir "bakta_results"
 $BatchSize = 10
 $PollIntervalSeconds = 60          # wait 1 minute between status checks
