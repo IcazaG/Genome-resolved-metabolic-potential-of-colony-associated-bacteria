@@ -25,16 +25,6 @@
 set -euo pipefail
 
 ###############################################################################
-# 0. DATA TRANSFER (run from local machine, PowerShell)
-###############################################################################
-# Example: transfer raw .fq.gz files from a local Windows machine to the cluster
-#
-#   $src = "C:\path\to\local\Easymetagenome"
-#   $dst = "user@cluster_address:/home/user/seq/"
-#   $files = Get-ChildItem -Path $src -Filter *.fq.gz -File | Select-Object -ExpandProperty FullName
-#   scp -P <port> $files $dst
-
-###############################################################################
 # 1. SETUP
 ###############################################################################
 
