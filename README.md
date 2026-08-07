@@ -1,5 +1,4 @@
-# Workflow for the metagenomic analysis of bacterial communities associated with Microcystis aeruginosa colonies (El Loto wetland, southern Chile), executed on the NLHPC cluster using the EasyMetagenome pipeline.
-
+# Workflow for the metagenomic analysis of bacterial communities associated with Microcystis aeruginosa colonies (El Loto wetland, southern Chile)
 ## 1. Quality Control
 
 fastp v0.23.0, quality filtering (minimum Phred score Q20, minimum read length 50 bp)
