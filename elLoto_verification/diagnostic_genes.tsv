@@ -1,0 +1,47 @@
+pathway	gene	ko	bakta_symbols	product_include	product_exclude	role
+# Diagnostic gene panel used to verify KEGG-Decoder pathway assignments.
+# Columns:
+#   ko              KEGG orthologue checked in the filtered KofamScan output
+#   bakta_symbols   gene symbols accepted from the Bakta 'Gene' column (| separated)
+#   product_include regular expressions matched against the Bakta 'Product' column
+#   product_exclude regular expressions that veto a match (guards against homonyms)
+#   role            'diagnostic' = defines the pathway; 'shared' = also occurs in
+#                   central metabolism and cannot support the pathway on its own
+Nitrogen fixation	nifH	K02588	nifH	nitrogenase iron protein|nitrogenase reductase		diagnostic
+Nitrogen fixation	nifD	K02586	nifD	nitrogenase molybdenum-iron protein alpha		diagnostic
+Nitrogen fixation	nifK	K02591	nifK	nitrogenase molybdenum-iron protein beta		diagnostic
+Nitrogen fixation	nifE	K02587	nifE	nitrogenase MoFe cofactor biosynthesis protein NifE		diagnostic
+Nitrogen fixation	nifN	K02592	nifN	nitrogenase MoFe cofactor biosynthesis protein NifN		diagnostic
+Nitrogen fixation	nifV	K02596	nifV	homocitrate synthase		diagnostic
+Ammonia oxidation	amoA/pmoA	K10944	amoA|pmoA	ammonia monooxygenase subunit A|methane oxygenase.*PmoA|methane monooxygenase.*PmoA|particulate methane monooxygenase	vanillate|aromatic|alkane	diagnostic
+Ammonia oxidation	amoB/pmoB	K10945	amoB|pmoB	monooxygenase subunit B	vanillate|aromatic|alkane	diagnostic
+Ammonia oxidation	hao	K10535	hao	hydroxylamine dehydrogenase|hydroxylamine oxidoreductase		diagnostic
+Reductive TCA cycle	aclA	K15230	aclA	ATP[- ]citrate lyase.*alpha|ATP[- ]citrate synthase.*alpha		diagnostic
+Reductive TCA cycle	aclB	K15231	aclB	ATP[- ]citrate lyase.*beta		diagnostic
+Reductive TCA cycle	ccl	K15234	ccl|ccsA	citryl-CoA lyase|citryl-CoA synthetase		diagnostic
+Wood-Ljungdahl	acsB	K14138	acsB	acetyl-CoA synthase|acetyl-CoA decarbonylase		diagnostic
+Wood-Ljungdahl	cooS/acsA	K00198	cooS|acsA	carbon monoxide dehydrogenase catalytic		diagnostic
+Wood-Ljungdahl	acsE	K15023	acsE	5-methyltetrahydrofolate.*corrinoid		diagnostic
+3-Hydroxypropionate bicycle	mcr	K14468	mcr	malonyl-CoA reductase		diagnostic
+3-Hydroxypropionate bicycle	smtAB	K14471	smtA|smtB	succinyl-CoA:.*malate CoA[- ]transferase		diagnostic
+3-Hydroxypropionate bicycle	mch	K14469	mch	acrylyl-CoA reductase		diagnostic
+3-Hydroxypropionate bicycle	mdh (shared)	K00024	mdh	malate dehydrogenase	NAD.P.|ubiquinone	shared
+3-Hydroxypropionate bicycle	ppc (shared)	K01595	ppc	phosphoenolpyruvate carboxylase		shared
+Calvin-Benson-Bassham	rbcL	K01601	rbcL|cbbL	ribulose.*bisphosphate carboxylase.*large		diagnostic
+Calvin-Benson-Bassham	prkB	K00855	prkB|prk	phosphoribulokinase		diagnostic
+Anoxygenic phototrophy	pufL	K08928	pufL	photosynthetic reaction center.*L subunit|photosynthetic reaction centre.*L subunit		diagnostic
+Anoxygenic phototrophy	pufM	K08929	pufM	photosynthetic reaction center.*M subunit|photosynthetic reaction centre.*M subunit		diagnostic
+Anoxygenic phototrophy	bchX	K11333	bchX	chlorophyllide.*reductase.*subunit X		diagnostic
+Anoxygenic phototrophy	bchY	K11334	bchY	chlorophyllide.*reductase.*subunit Y		diagnostic
+Anoxygenic phototrophy	bchZ	K11335	bchZ	chlorophyllide.*reductase.*subunit Z		diagnostic
+Dissimilatory sulfate reduction	dsrA	K11180	dsrA	dissimilatory sulfite reductase.*alpha		diagnostic
+Dissimilatory sulfate reduction	dsrB	K11181	dsrB	dissimilatory sulfite reductase.*beta		diagnostic
+Dissimilatory sulfate reduction	aprA	K00394	aprA	adenylylsulfate reductase.*alpha		diagnostic
+Dissimilatory sulfate reduction	aprB	K00395	aprB	adenylylsulfate reductase.*beta		diagnostic
+Thiosulfate oxidation (Sox)	soxB	K17224	soxB	sulfur oxidation protein SoxB|thiosulfohydrolase		diagnostic
+Sulfide oxidation	sqr	K17218	sqr	sulfide.quinone reductase|sulfide.quinone oxidoreductase		diagnostic
+Assimilatory sulfate reduction	sat	K00958	sat|cysD	sulfate adenylyltransferase|ATP sulfurylase		diagnostic
+Assimilatory sulfate reduction	cysK	K01738	cysK|cysM	cysteine synthase		diagnostic
+Hydrogenase [NiFe] group 1	hyaB	K06281	hyaB|hupL|hybC	uptake hydrogenase large subunit|hydrogenase-1 large chain	dehydrogenase|transhydrogenase	diagnostic
+Hydrogenase [NiFe] group 1	hyaA	K06282	hyaA|hupS|hybO	uptake hydrogenase small subunit	dehydrogenase|transhydrogenase	diagnostic
+Phosphonate utilisation	phnJ	K06163	phnJ	alpha-D-ribose 1-methylphosphonate 5-phosphate C-P lyase|C-P lyase PhnJ		diagnostic
