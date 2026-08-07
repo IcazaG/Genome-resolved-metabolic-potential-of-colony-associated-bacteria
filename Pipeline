@@ -229,13 +229,9 @@ mkdir -p result/megahit
 quast.py temp/megahit/final.contigs.fa \
     -o result/megahit/quast -t 2
 
-# Optional: compare MEGAHIT vs. metaSPAdes assemblies
+# Compare MEGAHIT vs. metaSPAdes assemblies
 quast.py --label "megahit,metaspades" \
     temp/megahit/final.contigs.fa \
     temp/metaspades.fa \
     -o result/quast
 
-# Optional: MetaQUAST (more comprehensive evaluation; requires reference
-# database download and may take significant time depending on connection)
-time metaquast.py temp/megahit/final.contigs.fa \
-    -o result/megahit/metaquast
