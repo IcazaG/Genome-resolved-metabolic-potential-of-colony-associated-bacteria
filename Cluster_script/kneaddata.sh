@@ -2,7 +2,7 @@
 #SBATCH --job-name=kneaddata
 #SBATCH --output=kneaddata%j.out
 #SBATCH --error=kneaddata%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
