@@ -2,7 +2,7 @@
 #SBATCH --job-name=quast
 #SBATCH --output=quast%j.out
 #SBATCH --error=quast%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
