@@ -2,7 +2,7 @@
 #SBATCH --job-name=metawrap_refine
 #SBATCH --output=metawrap_refine%j.out
 #SBATCH --error=metawrap_refine%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
