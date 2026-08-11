@@ -218,16 +218,16 @@ Keeps only the highest-quality genome among near-identical bins. **Result: 40 de
 
 Applied in sequence to each high-quality MAG:
 
-1. **Gene prediction** — Prodigal `v2.6.3` (metagenomic mode), per MAG.
+1. **Gene prediction** Prodigal `v2.6.3` (metagenomic mode), per MAG.
 2. **Functional + rRNA annotation** — Bakta `v1.12.0` (db `v6.0`); rRNA (5S/16S/23S) via Infernal-based covariance models.
-3. **tRNA genes** — tRNAscan-SE `v2.0.13`, bacterial search mode.
+3. **tRNA genes** tRNAscan-SE `v2.0.13`, bacterial search mode.
 4. **KEGG orthologue assignment** — KofamScan `v1.3.0`, adaptive per-KO score threshold.
-5. **Pathway completeness** — KEGG-Decoder, for core C/N/S/energy metabolism + photosynthesis.
+5. **Pathway completeness** KEGG-Decoder, for core C/N/S/energy metabolism + photosynthesis.
 
 > [!CAUTION]
 > KEGG-Decoder completeness scores are **aggregate measures** and can overstate completeness when steps overlap central metabolism. **Every reported pathway must be verified gene-by-gene** against Bakta's diagnostic enzyme calls; flag pathways sharing steps with central metabolism explicitly.
 
-**MIMAG "high-quality draft" checklist** (Bowers et al., 2017) — in addition to completeness/contamination:
+**MIMAG "high-quality draft" checklist** (Bowers et al., 2017)  in addition to completeness/contamination:
 
 - [ ] 5S rRNA present (Bakta)
 - [ ] 16S rRNA present (Bakta)
