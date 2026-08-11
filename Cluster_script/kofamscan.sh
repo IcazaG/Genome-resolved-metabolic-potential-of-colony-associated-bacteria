@@ -2,7 +2,7 @@
 #SBATCH --job-name=kofamscan
 #SBATCH --output=kofamscan%j.out
 #SBATCH --error=kofamscan%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
