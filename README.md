@@ -173,7 +173,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 |---|---|
 | **Tool** | Kraken2 |
 | **Database** | PlusPF-16 |
-| **Nomenclature** | **GTDB** (not NCBI) — for consistency with MAG classification |
+| **Nomenclature** | **GTDB** (not NCBI) for consistency with MAG classification |
 
 **What it does:** classifies each R1/R2 read pair independently per sample, without assembly.
 
@@ -219,7 +219,7 @@ Keeps only the highest-quality genome among near-identical bins. **Result: 40 de
 Applied in sequence to each high-quality MAG:
 
 1. **Gene prediction** Prodigal `v2.6.3` (metagenomic mode), per MAG.
-2. **Functional + rRNA annotation** — Bakta `v1.12.0` (db `v6.0`); rRNA (5S/16S/23S) via Infernal-based covariance models.
+2. **Functional + rRNA annotation** Bakta `v1.12.0` (db `v6.0`); rRNA (5S/16S/23S) via Infernal-based covariance models.
 3. **tRNA genes** tRNAscan-SE `v2.0.13`, bacterial search mode.
 4. **KEGG orthologue assignment** — KofamScan `v1.3.0`, adaptive per-KO score threshold.
 5. **Pathway completeness** KEGG-Decoder, for core C/N/S/energy metabolism + photosynthesis.
