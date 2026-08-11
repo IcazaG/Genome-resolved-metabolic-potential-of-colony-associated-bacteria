@@ -2,7 +2,7 @@
 #SBATCH --job-name=gtdbtk
 #SBATCH --output=gtdbtk%j.out
 #SBATCH --error=gtdbtk%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
