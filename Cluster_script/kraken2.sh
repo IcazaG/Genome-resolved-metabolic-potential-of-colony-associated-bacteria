@@ -2,7 +2,7 @@
 #SBATCH --job-name=kraken2
 #SBATCH --output=kraken2%j.out
 #SBATCH --error=kraken2%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
