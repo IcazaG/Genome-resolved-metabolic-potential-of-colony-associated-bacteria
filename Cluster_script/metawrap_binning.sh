@@ -2,11 +2,11 @@
 #SBATCH --job-name=metawrap_bin
 #SBATCH --output=metawrap_bin%j.out
 #SBATCH --error=metawrap_bin%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=128G
+#SBATCH --mem=200G
 #SBATCH --time=08:00:00
 
 export PATH="$HOME/miniconda3/bin:$PATH"
