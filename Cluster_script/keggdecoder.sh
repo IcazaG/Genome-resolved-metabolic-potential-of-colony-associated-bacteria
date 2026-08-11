@@ -2,7 +2,7 @@
 #SBATCH --job-name=keggdecoder
 #SBATCH --output=keggdecoder%j.out
 #SBATCH --error=keggdecoder%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
