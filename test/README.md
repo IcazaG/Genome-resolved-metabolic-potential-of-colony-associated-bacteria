@@ -81,14 +81,11 @@
 
 ## How to use this guide
 
-This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). Each section explains **what** is done, **with which tool and repository script**, **with which exact parameters**, and **why**, so that methodological decisions (for example, choosing MEGAHIT over metaSPAdes) are justified and reproducible by a third party.
+This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). 
 
 ---
 
 ## 0. Experimental design: what samples are being analyzed
-
-> [!IMPORTANT]
-> Read this section before running anything. It determines how the data can — and cannot — be compared.
 
 - The analysis covers **seven enrichment cultures** of *Microcystis aeruginosa* (`E1`–`E7`), each listed as a row in `result/metadata.txt` under the `SampleID` column.
 - **`E3` is a technical re-sequencing replicate of `E2`**, and **`E5` is a technical re-sequencing replicate of `E4`**. They come from the **same genomic DNA extract** as `E2` and `E4` respectively — simply re-sequenced (a repeat run of the same library) — not independent biological cultures or extractions.
@@ -112,7 +109,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 **Requirements**
 
-- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM) or a Linux server with ≥200 GB RAM (recommended for metaSPAdes) and a multi-core CPU
+- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM) or a Linux server with ≥200 GB RAM (recommended for metaSPAdes), a multi-core CPU and at least 300 GB of hard drive space to store the databases.
 - [ ] Miniconda/Anaconda, with a **separate conda environment per tool** to avoid dependency conflicts
 - [ ] PowerShell 5.1+/Core, for `Bakta_batch/BaktaBatch.ps1` (Section 11)
 - [ ] Python 3 with `pandas`, for `elLoto_verification/` scripts (Section 11)
@@ -143,7 +140,7 @@ meta/
 
 ## 2. Read quality control (fastp)
 
-**▶ Script:** [`Cluster_script/fastp.sh`](Cluster_script/fastp.sh)
+**Script:** [`Cluster_script/fastp.sh`](Cluster_script/fastp.sh)
 
 | | |
 |---|---|
@@ -151,8 +148,6 @@ meta/
 | **Parameters** | min. Phred quality **20** · min. read length **50 bp** |
 
 **What it does:** trims sequencing adapters and low-quality bases from read ends, and discards reads that become too short after trimming. Run independently per sample (E1–E7), producing HTML/JSON reports for visual QC inspection before/after filtering.
-
-**Why these parameters:** Phred 20 ≈ 1% base-calling error probability, a widely accepted metagenomics standard; 50 bp minimum avoids retaining fragments too short to reliably map or assemble.
 
 ---
 
@@ -179,9 +174,9 @@ meta/
 **▶ Scripts:** [`Cluster_script/megahit.sh`](Cluster_script/megahit.sh) · [`Cluster_script/metaspades.sh`](Cluster_script/metaspades.sh) · [`Cluster_script/quast.sh`](Cluster_script/quast.sh)
 
 > [!NOTE]
-> This is the most methodologically delicate step — the assembler choice must be justified with data, not assumed.
+> The assembler choice must be justified with data.
 
-**Design:** clean reads from all **seven** samples (E1–E7) are pooled and assembled **jointly as a single combined input** — no per-sample or per-replicate assembly. This maximizes coverage depth for low-abundance genome reconstruction.
+**Design:** clean reads from all **seven** samples (E1–E7) are pooled and assembled **jointly as a single combined input**, no per-sample or per-replicate assembly. This maximizes coverage depth for low-abundance genome reconstruction.
 
 | Assembler | Version | Trade-off | Script |
 |---|---|---|---|
@@ -207,17 +202,17 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 ## 5. Non-redundant gene catalogue (Prodigal + CD-HIT-EST) and quantification (Salmon)
 
-**▶ Scripts:** [`Cluster_script/prodigal.sh`](Cluster_script/prodigal.sh) · [`Cluster_script/cdhit.sh`](Cluster_script/cdhit.sh) · [`Cluster_script/salmom.sh`](Cluster_script/salmom.sh)
+**Scripts:** [`Cluster_script/prodigal.sh`](Cluster_script/prodigal.sh) · [`Cluster_script/cdhit.sh`](Cluster_script/cdhit.sh) · [`Cluster_script/salmom.sh`](Cluster_script/salmom.sh)
 
-1. **Gene prediction — Prodigal `v2.6.3`** (`prodigal.sh`), metagenomic mode (`-p meta`). Retain only **complete** ORFs (not truncated at either end), **≥300 bp**.
-2. **Non-redundant catalogue — CD-HIT-EST** (`cdhit.sh`): cluster at **95% nucleotide identity**, **90% coverage** of the shorter sequence; keep one representative per cluster.
-3. **Quantification — Salmon `v1.10.3`** (`salmom.sh`), metagenomic mode (`--meta`): index from the NR catalogue, quantify TPM and raw counts per sample → sample × gene abundance matrix.
+1. **Gene prediction  Prodigal `v2.6.3`** (`prodigal.sh`), metagenomic mode (`-p meta`). Retain only **complete** ORFs (not truncated at either end), **≥300 bp**.
+2. **Non-redundant catalogue  CD-HIT-EST** (`cdhit.sh`): cluster at **95% nucleotide identity**, **90% coverage** of the shorter sequence; keep one representative per cluster.
+3. **Quantification  Salmon `v1.10.3`** (`salmom.sh`), metagenomic mode (`--meta`): index from the NR catalogue, quantify TPM and raw counts per sample → sample × gene abundance matrix.
 
 ---
 
 ## 6. Functional annotation of the gene catalogue
 
-**▶ Script:** [`Cluster_script/eggnog.sh`](Cluster_script/eggnog.sh)
+**Script:** [`Cluster_script/eggnog.sh`](Cluster_script/eggnog.sh)
 
 | Database | Tool | Version | Provides |
 |---|---|---|---|
@@ -236,29 +231,25 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 ## 7. Taxonomic classification of reads (Kraken2, PlusPF-16 database)
 
-**▶ Script:** [`Cluster_script/kraken2.sh`](Cluster_script/kraken2.sh)
+**Script:** [`Cluster_script/kraken2.sh`](Cluster_script/kraken2.sh)
 
 | | |
 |---|---|
 | **Tool** | Kraken2 |
 | **Database** | PlusPF-16 |
-| **Nomenclature** | **GTDB** (not NCBI) — for consistency with MAG classification |
+| **Nomenclature** | **GTDB** (not NCBI)  for consistency with MAG classification |
 
 **What it does:** classifies each R1/R2 read pair independently per sample, without assembly.
-
-> [!WARNING]
-> This is a **distinct** line of evidence from MAG-based inference (Section 10) — do **not** combine them as if equivalent. Read classification can detect a taxon from a few reads; MAG-based inference requires that taxon's contigs to pass completeness/contamination thresholds.
-
 ---
 
 ## 8. Genome-resolved binning (metaWRAP) on the pooled co-assembly
 
-**▶ Scripts:** [`Cluster_script/metawrap_binning.sh`](Cluster_script/metawrap_binning.sh) · [`Cluster_script/metawrap_refine.sh`](Cluster_script/metawrap_refine.sh)
+**Scripts:** [`Cluster_script/metawrap_binning.sh`](Cluster_script/metawrap_binning.sh) · [`Cluster_script/metawrap_refine.sh`](Cluster_script/metawrap_refine.sh)
 
 | | |
 |---|---|
 | **Tool** | metaWRAP `v1.3.2` (Uritskiy et al., 2018) |
-| **Binners** | MetaBAT2 (Kang et al., 2019) + MaxBin2 (Wu et al., 2016) — **no CONCOCT** |
+| **Binners** | MetaBAT2 (Kang et al., 2019) + MaxBin2 (Wu et al., 2016) |
 
 **Design:** binning (`metawrap_binning.sh`) runs on the **single pooled co-assembly**, using all seven samples' reads as coverage input — no per-sample binning.
 
@@ -270,7 +261,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 ## 9. Dereplication (dRep, 99% ANI)
 
-**▶ Script:** [`Cluster_script/drep.sh`](Cluster_script/drep.sh)
+**Script:** [`Cluster_script/drep.sh`](Cluster_script/drep.sh)
 
 | | |
 |---|---|
@@ -283,7 +274,7 @@ Keeps only the highest-quality genome among near-identical bins. **Result: 40 de
 
 ## 10. Quality assessment (CheckM2) and taxonomic placement (GTDB-Tk)
 
-**▶ Scripts:** [`Cluster_script/checkm2.sh`](Cluster_script/checkm2.sh) · [`Cluster_script/gtdbtk.sh`](Cluster_script/gtdbtk.sh)
+**Scripts:** [`Cluster_script/checkm2.sh`](Cluster_script/checkm2.sh) · [`Cluster_script/gtdbtk.sh`](Cluster_script/gtdbtk.sh)
 
 - **CheckM2** (`checkm2.sh`; Chklovski et al., 2023): completeness/contamination via ML model on single-copy marker genes.
 - **GTDB-Tk** (`gtdbtk.sh`; Chaumeil et al., 2022): standardized taxonomic classification (domain → species), consistent with Section 7's nomenclature.
@@ -294,7 +285,7 @@ Keeps only the highest-quality genome among near-identical bins. **Result: 40 de
 
 ## 11. MAG-level functional annotation, MIMAG classification, and manual verification
 
-**▶ Scripts:**
+**Scripts:**
 [`Cluster_script/prodigal.sh`](Cluster_script/prodigal.sh) (per-MAG) ·
 [`Bakta_batch/BaktaBatch.ps1`](Bakta_batch/BaktaBatch.ps1) ·
 [`Cluster_script/trnascan.sh`](Cluster_script/trnascan.sh) ·
@@ -304,14 +295,14 @@ Keeps only the highest-quality genome among near-identical bins. **Result: 40 de
 
 Applied in sequence to each high-quality MAG:
 
-1. **Gene prediction** — Prodigal `v2.6.3` (`prodigal.sh`, metagenomic mode), per MAG.
-2. **Functional + rRNA annotation** — **Bakta `v1.12.0`** (db `v6.0`), batch-run via **[`Bakta_batch/BaktaBatch.ps1`](Bakta_batch/BaktaBatch.ps1)**, a PowerShell script that automates upload, job tracking, and result download against the Bakta web API for all 19 high-quality MAGs at once (see `Bakta_batch/README.md` for configuration). rRNA (5S/16S/23S) is identified via Infernal-based covariance models within Bakta.
-3. **tRNA genes** — tRNAscan-SE `v2.0.13` (`trnascan.sh`), bacterial search mode.
-4. **KEGG orthologue assignment** — KofamScan `v1.3.0` (`kofamscan.sh`), adaptive per-KO score threshold.
-5. **Pathway completeness** — KEGG-Decoder (`keggdecoder.sh`), for core C/N/S/energy metabolism + photosynthesis.
+1. **Gene prediction**  Prodigal `v2.6.3` (`prodigal.sh`, metagenomic mode), per MAG.
+2. **Functional + rRNA annotation**  **Bakta `v1.12.0`** (db `v6.0`), batch-run via **[`Bakta_batch/BaktaBatch.ps1`](Bakta_batch/BaktaBatch.ps1)**, a PowerShell script that automates upload, job tracking, and result download against the Bakta web API for all 19 high-quality MAGs at once (see `Bakta_batch/README.md` for configuration). rRNA (5S/16S/23S) is identified via Infernal-based covariance models within Bakta.
+3. **tRNA genes**  tRNAscan-SE `v2.0.13` (`trnascan.sh`), bacterial search mode.
+4. **KEGG orthologue assignment**  KofamScan `v1.3.0` (`kofamscan.sh`), adaptive per-KO score threshold.
+5. **Pathway completeness**  KEGG-Decoder (`keggdecoder.sh`), for core C/N/S/energy metabolism + photosynthesis.
 
 > [!CAUTION]
-> KEGG-Decoder completeness scores are **aggregate measures** and can overstate completeness when steps overlap central metabolism. **Every reported pathway must be verified gene-by-gene** against Bakta's diagnostic enzyme calls; flag pathways sharing steps with central metabolism explicitly.
+> KEGG-Decoder completeness scores are **aggregate measures** and can overstate completeness when steps overlap central metabolism. **Every reported pathway must be verified gene-by-gene** against Bakta's diagnostic enzyme calls.
 
 ### 11.1 Manual gene-by-gene verification (`elLoto_verification/`)
 
@@ -324,11 +315,11 @@ This is where the caution above is actually enforced in code. The `elLoto_verifi
 | `03_compare_matrices.py` | Compares the resulting verified-gene matrix against the raw KEGG-Decoder completeness matrix, flagging any pathway whose "complete" call is not fully supported at the gene level |
 
 Supporting lookup tables:
-- `diagnostic_genes.tsv` — the diagnostic enzyme(s) that define completeness for each tracked pathway
-- `genome_map.tsv` — maps internal MAG identifiers to Bakta annotation outputs
-- `name_map.tsv` — maps gene/KO identifiers to human-readable pathway component names
+- `diagnostic_genes.tsv`  the diagnostic enzymes that define completeness for each tracked pathway
+- `genome_map.tsv`  maps internal MAG identifiers to Bakta annotation outputs
+- `name_map.tsv`  maps gene/KO identifiers to human-readable pathway component names
 
-Run this step **after** `keggdecoder.sh` and the Bakta batch annotation, and **before** reporting any pathway as complete in the manuscript.
+Run this step **after** `keggdecoder.sh` and the Bakta batch annotation.
 
 ### 11.2 MIMAG "high-quality draft" checklist
 
@@ -345,10 +336,10 @@ Run this step **after** `keggdecoder.sh` and the Bakta batch annotation, and **b
 
 ## 12. Targeted phylogenetic validation of PufM orthology (K08929)
 
-**▶ Location:** [`Pipeline/`](Pipeline/)
+**Location:** [`Pipeline/`](Pipeline/)
 
 > [!NOTE]
-> Automated domain annotation can misassign genes sharing structural domains with non-photosynthetic protein families — hence a targeted phylogenetic check for *pufM*.
+> Automated domain annotation can misassign genes sharing structural domains with non-photosynthetic protein families, hence a targeted phylogenetic check for *pufM*.
 
 | Step | Tool / version | Detail |
 |---|---|---|
@@ -357,35 +348,9 @@ Run this step **after** `keggdecoder.sh` and the Bakta batch annotation, and **b
 | 3. Trimming | trimAl | `-gappyout` → **306 columns** retained |
 | 4. Tree inference | IQ-TREE `v3.1.3` | Model by BIC → **Q.PFAM+F+R4**; 1,000 UFBoot + 1,000 SH-aLRT |
 
-**Interpretation:** confirms (or refutes) whether candidates cluster with true PufM references rather than non-photosynthetic homologs.
 
 > [!NOTE]
 > Reference sequences follow **NCBI** nomenclature (as used by UniProt); taxonomic groupings elsewhere in the manuscript follow **GTDB**, under which Betaproteobacteria is nested within Gammaproteobacteria. Keep this distinction explicit.
-
----
-
-## 13. Summary of expected results
-
-| Stage | Expected result |
-|---|---|
-| Samples | 7 cultures (E1–E7); E3/E5 technical replicates of E2/E4 |
-| Selected assembler | MEGAHIT (over metaSPAdes), contigs ≥500 bp |
-| Dereplicated MAGs (99% ANI) | **40** |
-| High-quality MAGs (>90%/<5%) | **19** |
-| Validated pufM genes (K08929) | **7**, in Pseudomonadota |
-| Phylogenetic model (BIC) | **Q.PFAM+F+R4** |
-| Alignment columns after trimming | **306** |
-
----
-
-## 14. Reproducibility notes
-
-- Always record the **exact version** of each tool (`--version` or equivalent) — results vary between versions even with identical parameters.
-- Never mix **technical and biological replicates** in cross-culture statistical comparisons (see [Section 0](#0-experimental-design-what-samples-are-being-analyzed)).
-- **Document selection decisions** (e.g., assembler choice) with the comparative metrics that support them.
-- **Manually verify** aggregate scores (KEGG-Decoder) against gene-level evidence using [`elLoto_verification/`](elLoto_verification/) before reporting a pathway as "complete."
-- Keep **taxonomic nomenclature** (GTDB vs. NCBI) consistent and explicit throughout.
-- See each subfolder's own `README.md` (`Cluster_script/`, `Bakta_batch/`, `elLoto_verification/`) for exact usage/configuration of individual scripts.
 
 ---
 
