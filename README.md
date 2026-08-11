@@ -2,7 +2,7 @@
 <!-- markdownlint-disable MD033 -->
 <div align="center">
 
-# Metagenome Assembly, Binning, and Annotation
+# Metagenome Assembly, binning, and annotation
 ### A reproducibility guide for *Microcystis aeruginosa* enrichment cultures (E1–E7)
 
 [![Pipeline](https://img.shields.io/badge/base%20pipeline-EasyMetagenome-blue)](https://doi.org/10.1002/imt2.70001)
@@ -73,7 +73,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 **Requirements**
 
-- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥300 GB RAM (recommended for metaSPAdes) and a multi-core CPU (24 CPU)
+- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥300 GB RAM (recommended for metaSPAdes), a multi-core CPU (24 CPU) and at least 300 GB of hard drive space to store the databases
 - [ ] Miniconda/Anaconda, with a **separate conda environment per tool** to avoid dependency conflicts
 - [ ] A reference database directory (`db/`) containing:
   - human reference genome **hg38** (KneadData)
@@ -85,6 +85,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
   - **Bakta v6.0** database
   - **KOfam** profiles
   - a curated **UniProt** reference set for PufM
+ 
 
 **Recommended folder structure**
 
@@ -130,7 +131,7 @@ meta/
 ## 4. Pooled co-assembly: MEGAHIT vs. metaSPAdes comparison
 
 > [!NOTE]
-> This is the most methodologically delicate step — the assembler choice must be justified with data, not assumed.
+> The assembler choice must be justified with data.
 
 **Design:** clean reads from all **seven** samples (E1–E7) are pooled and assembled **jointly as a single combined input** — no per-sample or per-replicate assembly. This maximizes coverage depth for low-abundance genome reconstruction.
 
@@ -267,8 +268,7 @@ Applied in sequence to each high-quality MAG:
 **Interpretation:** confirms (or refutes) whether candidates cluster with true PufM references rather than non-photosynthetic homologs.
 
 > [!NOTE]
-> Reference sequences follow **NCBI** nomenclature (as used by UniProt); taxonomic groupings elsewhere in the manuscript follow **GTDB**, under which Betaproteobacteria is nested within Gammaproteobacteria. Keep this distinction explicit.
-
+> Reference sequences follow **NCBI** nomenclature (as used by UniProt); taxonomic groupings elsewhere in the manuscript follow **GTDB**, under which Betaproteobacteria is nested within Gammaproteobacteria. 
 ---
 
 ## 13. Summary of expected results
@@ -282,16 +282,6 @@ Applied in sequence to each high-quality MAG:
 | Validated pufM genes (K08929) | **7**, in Pseudomonadota |
 | Phylogenetic model (BIC) | **Q.PFAM+F+R4** |
 | Alignment columns after trimming | **306** |
-
----
-
-## 14. Reproducibility notes
-
-- Always record the **exact version** of each tool (`--version` or equivalent) — results vary between versions even with identical parameters.
-- Never mix **technical and biological replicates** in cross-culture statistical comparisons (see [Section 0](#0-experimental-design-what-samples-are-being-analyzed)).
-- **Document selection decisions** (e.g., assembler choice) with the comparative metrics that support them.
-- **Manually verify** aggregate scores (e.g., KEGG-Decoder) against gene-level evidence before reporting a pathway as "complete."
-- Keep **taxonomic nomenclature** (GTDB vs. NCBI) consistent and explicit throughout.
 
 ---
 
