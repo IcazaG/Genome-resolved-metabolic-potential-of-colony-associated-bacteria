@@ -1,8 +1,7 @@
-# Workflow for the metagenomic analysis of bacterial communities associated with Microcystis aeruginosa colonies (El Loto wetland, southern Chile)
 <!-- markdownlint-disable MD033 -->
 <div align="center">
 
-# Metagenome Assembly, binning, and annotation
+# Metagenome Assembly, Binning, and Annotation
 ### A reproducibility guide for *Microcystis aeruginosa* enrichment cultures (E1–E7)
 
 [![Pipeline](https://img.shields.io/badge/base%20pipeline-EasyMetagenome-blue)](https://doi.org/10.1002/imt2.70001)
@@ -40,16 +39,7 @@
 
 ---
 
-## How to use this guide
-
-This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs).
-
----
-
 ## 0. Experimental design: what samples are being analyzed
-
-> [!IMPORTANT]
-> Read this section before running anything. It determines how the data can — and cannot — be compared.
 
 - The analysis covers **seven enrichment cultures** of *Microcystis aeruginosa* (`E1`–`E7`), each listed as a row in `result/metadata.txt` under the `SampleID` column.
 - **`E3` is a technical re-sequencing replicate of `E2`**, and **`E5` is a technical re-sequencing replicate of `E4`**. They come from the **same genomic DNA extract** as `E2` and `E4` respectively — simply re-sequenced (a repeat run of the same library) — not independent biological cultures or extractions.
@@ -73,7 +63,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 **Requirements**
 
-- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥300 GB RAM (recommended for metaSPAdes), a multi-core CPU (24 CPU) and at least 300 GB of hard drive space to store the databases
+- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥300 GB RAM (recommended for metaSPAdes), a multi-core CPU and at least 300 GB of hard drive space to store the databases.
 - [ ] Miniconda/Anaconda, with a **separate conda environment per tool** to avoid dependency conflicts
 - [ ] A reference database directory (`db/`) containing:
   - human reference genome **hg38** (KneadData)
@@ -85,7 +75,6 @@ This document describes, step by step, how anyone with access to an HPC cluster 
   - **Bakta v6.0** database
   - **KOfam** profiles
   - a curated **UniProt** reference set for PufM
- 
 
 **Recommended folder structure**
 
@@ -110,6 +99,8 @@ meta/
 
 **What it does:** trims sequencing adapters and low-quality bases from read ends, and discards reads that become too short after trimming. Run independently per sample (E1–E7), producing HTML/JSON reports for visual QC inspection before/after filtering.
 
+**Why these parameters:** Phred 20 ≈ 1% base-calling error probability, a widely accepted metagenomics standard; 50 bp minimum avoids retaining fragments too short to reliably map or assemble.
+
 ---
 
 ## 3. Host decontamination (KneadData + Bowtie2, hg38)
@@ -122,9 +113,6 @@ meta/
 **What it does:** maps filtered reads against the human reference genome and removes anything that aligns, keeping only non-human (microbial) reads. Relevant even for environmental/culture samples, since lab handling can introduce trace human contamination.
 
 **Expected output:** per sample, a "clean" FASTQ pair, standardized as `{sample}_1.clean.fastq` / `{sample}_2.clean.fastq`.
-
-> [!TIP]
-> Generate a read-count summary table across stages (raw → filtered → decontaminated) 
 
 ---
 
@@ -189,9 +177,6 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 **What it does:** classifies each R1/R2 read pair independently per sample, without assembly.
 
-> [!WARNING]
-> This is a **distinct** line of evidence from MAG-based inference (Section 10) — do **not** combine them as if equivalent. Read classification can detect a taxon from a few reads; MAG-based inference requires that taxon's contigs to pass completeness/contamination thresholds.
-
 ---
 
 ## 8. Genome-resolved binning (metaWRAP) on the pooled co-assembly
@@ -199,7 +184,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 | | |
 |---|---|
 | **Tool** | metaWRAP `v1.3.2` (Uritskiy et al., 2018) |
-| **Binners** | MetaBAT2 (Kang et al., 2019) + MaxBin2 (Wu et al., 2016) — **no CONCOCT** |
+| **Binners** | MetaBAT2 (Kang et al., 2019) + MaxBin2 (Wu et al., 2016) 
 
 **Design:** binning runs on the **single pooled co-assembly**, using all seven samples' reads as coverage input — no per-sample binning.
 
@@ -253,10 +238,8 @@ Applied in sequence to each high-quality MAG:
 
 ---
 
-## 12. Targeted phylogenetic validation of PufM orthology (K08929)
+## 12. Targeted phylogenetic validation of *PufM* orthology (K08929)
 
-> [!NOTE]
-> Automated domain annotation can misassign genes sharing structural domains with non-photosynthetic protein families — hence a targeted phylogenetic check for *pufM*.
 
 | Step | Tool / version | Detail |
 |---|---|---|
@@ -265,25 +248,10 @@ Applied in sequence to each high-quality MAG:
 | 3. Trimming | trimAl | `-gappyout` → **306 columns** retained |
 | 4. Tree inference | IQ-TREE `v3.1.3` | Model by BIC → **Q.PFAM+F+R4**; 1,000 UFBoot + 1,000 SH-aLRT |
 
-**Interpretation:** confirms (or refutes) whether candidates cluster with true PufM references rather than non-photosynthetic homologs.
-
-> [!NOTE]
-> Reference sequences follow **NCBI** nomenclature (as used by UniProt); taxonomic groupings elsewhere in the manuscript follow **GTDB**, under which Betaproteobacteria is nested within Gammaproteobacteria. 
----
-
-## 13. Summary of expected results
-
-| Stage | Expected result |
-|---|---|
-| Samples | 7 cultures (E1–E7); E3/E5 technical replicates of E2/E4 |
-| Selected assembler | MEGAHIT (over metaSPAdes), contigs ≥500 bp |
-| Dereplicated MAGs (99% ANI) | **40** |
-| High-quality MAGs (>90%/<5%) | **19** |
-| Validated pufM genes (K08929) | **7**, in Pseudomonadota |
-| Phylogenetic model (BIC) | **Q.PFAM+F+R4** |
-| Alignment columns after trimming | **306** |
+**Interpretation:** confirms (or refutes) whether candidates cluster with true *PufM* references rather than non-photosynthetic homologs.
 
 ---
+
 
 <div align="center">
 
