@@ -7,18 +7,18 @@ Pl
 
 The Bakta web API is a free, shared resource maintained for the research community. Please use this script conscientiously to avoid overloading the servers:
 
--Keep $BatchSize at a reasonable level (avoid launching very large batches at once).
--Do not set $PollIntervalSeconds too low. frequent polling adds unnecessary load; 30–60 seconds is generally sufficient.
--Avoid running multiple instances of the script in parallel against the same API.
--Only (re)submit genomes that actually need annotation, and use the cleanup function (Invoke-BaktaDelete) to -remove finished jobs you no longer need.
--If you plan to annotate very large numbers of genomes, consider running Bakta locally instead of via the web API.
+-  Keep $BatchSize at a reasonable level (avoid launching very large batches at once).
+-  Do not set $PollIntervalSeconds too low. frequent polling adds unnecessary load; 30–60 seconds is generally sufficient.
+-  Avoid running multiple instances of the script in parallel against the same API.
+-  Only (re)submit genomes that actually need annotation, and use the cleanup function (Invoke-BaktaDelete) to -remove finished jobs you no longer need.
+-  If you plan to annotate very large numbers of genomes, consider running Bakta locally instead of via the web API.
 
 ## Requirements
 
-- PowerShell 5.1+ (Windows) or PowerShell Core (Linux/macOS)
-- Internet access to communicate with the Bakta API
-- Input files with extension `.fa` (nucleotide FASTA)
-- No credentials required for basic API usage
+-   PowerShell 5.1+ (Windows) or PowerShell Core (Linux/macOS)
+-   Internet access to communicate with the Bakta API
+-   Input files with extension `.fa` (nucleotide FASTA)
+-   No credentials required for basic API usage
 
 ## Configuration
 
