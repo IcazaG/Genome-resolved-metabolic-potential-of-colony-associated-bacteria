@@ -11,7 +11,8 @@
 
 ## How to use this guide
 
-This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). This is not a script to copy and paste without thinking — each section explains **what is done, with which tool, with which exact parameters, and why**, so that methodological decisions (for example, choosing MEGAHIT over metaSPAdes) are justified and reproducible by a third party.
+This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). 
+
 
 ---
 
@@ -27,7 +28,6 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 ## 1. Environment setup
 
-**What you need:**
 - Access to a cluster with a job scheduler (in this case NLHPC/SLURM) or a Linux server with sufficient RAM (≥200 GB recommended for metaSPAdes) and a multi-core CPU.
 - Miniconda/Anaconda installed, with a separate conda environment per tool (this avoids dependency conflicts between bioinformatics packages).
 - A reference database directory (`db/`) containing: the human reference genome hg38 (for KneadData), eggNOG v5.0.2, dbCAN2/CAZyDB, CARD, Kraken2 PlusPF-16, GTDB, the Bakta v6.0 database, KOfam profiles, and a curated UniProt reference set for PufM.
