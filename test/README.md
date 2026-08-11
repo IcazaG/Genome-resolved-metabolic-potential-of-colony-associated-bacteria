@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 -->
 <div align="center">
 
-# Metagenome Assembly, Binning, and Annotation
+# Metagenome Assembly, binning, and annotation
 ### A reproducibility guide for *Microcystis aeruginosa* enrichment cultures (E1–E7)
 
 [![Pipeline](https://img.shields.io/badge/base%20pipeline-EasyMetagenome-blue)](https://doi.org/10.1002/imt2.70001)
