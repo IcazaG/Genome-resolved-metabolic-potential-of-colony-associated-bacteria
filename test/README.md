@@ -58,11 +58,6 @@
 └── README.md                    # This file
 ```
 
-> [!TIP]
-> Each numbered section below states explicitly **which script(s) in this repository implement it**, so you can jump straight from the methodology to the code.
-
----
-
 ## Table of contents
 
 - [How to use this guide](#-how-to-use-this-guide)
