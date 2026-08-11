@@ -153,7 +153,7 @@ meta/
 
 ## 3. Host decontamination (KneadData + Bowtie2, hg38)
 
-**▶ Script:** [`Cluster_script/kneaddata.sh`](Cluster_script/kneaddata.sh)
+**Script:** [`Cluster_script/kneaddata.sh`](Cluster_script/kneaddata.sh)
 
 | | |
 |---|---|
@@ -171,7 +171,7 @@ meta/
 
 ## 4. Pooled co-assembly: MEGAHIT vs. metaSPAdes comparison
 
-**▶ Scripts:** [`Cluster_script/megahit.sh`](Cluster_script/megahit.sh) · [`Cluster_script/metaspades.sh`](Cluster_script/metaspades.sh) · [`Cluster_script/quast.sh`](Cluster_script/quast.sh)
+**Scripts:** [`Cluster_script/megahit.sh`](Cluster_script/megahit.sh) · [`Cluster_script/metaspades.sh`](Cluster_script/metaspades.sh) · [`Cluster_script/quast.sh`](Cluster_script/quast.sh)
 
 > [!NOTE]
 > The assembler choice must be justified with data.
