@@ -2,7 +2,7 @@
 #SBATCH --job-name=salmon
 #SBATCH --output=salmon%j.out
 #SBATCH --error=salmon%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
