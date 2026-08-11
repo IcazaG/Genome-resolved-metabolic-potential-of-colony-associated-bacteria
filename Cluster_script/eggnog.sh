@@ -2,7 +2,7 @@
 #SBATCH --job-name=eggnog
 #SBATCH --output=eggnog%j.out
 #SBATCH --error=eggnog%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
