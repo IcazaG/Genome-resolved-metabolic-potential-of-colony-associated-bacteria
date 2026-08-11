@@ -2,7 +2,7 @@
 #SBATCH --job-name=prodigal
 #SBATCH --output=prodigal%j.out
 #SBATCH --error=prodigal%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
