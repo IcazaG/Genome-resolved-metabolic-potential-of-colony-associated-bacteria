@@ -42,7 +42,7 @@
 ## 0. Experimental design: what samples are being analyzed
 
 - The analysis covers **seven enrichment cultures** of *Microcystis aeruginosa* (`E1`–`E7`), each listed as a row in `result/metadata.txt` under the `SampleID` column.
-- **`E3` is a technical re-sequencing replicate of `E2`**, and **`E5` is a technical re-sequencing replicate of `E4`**. They come from the **same genomic DNA extract** as `E2` and `E4` respectively — simply re-sequenced (a repeat run of the same library) — not independent biological cultures or extractions.
+- **`E3` is a technical re-sequencing replicate of `E2`**, and **`E5` is a technical re-sequencing replicate of `E4`**. They come from the **same genomic DNA extract** as `E2` and `E4` respectively, simply re-sequenced (a repeat run of the same library) — not independent biological cultures or extractions.
 - **Analysis rule:** `E3` and `E5` must **not** be treated as independent biological replicates in any comparison *across* cultures. If `E1`, `E2`, `E4`, `E6`, `E7` are compared as five biological replicates, `E3` and `E5` are excluded from that count.
 - **Exception:** for co-assembly, **all seven read sets are pooled together**, since the goal there is maximizing sequencing depth/coverage, not statistical inference between groups.
 - **Metadata-driven design:** the workflow reads the sample list from `result/metadata.txt` (`SampleID` column) instead of hardcoding sample names — reuse it on a new sample set by editing that file only.
@@ -86,7 +86,7 @@ meta/
 └── pipeline.sh (or notes from this document)
 ```
 
-**Starting point:** `metadata.txt` must have at least a `SampleID` column (E1…E7), and should be moved to `result/metadata.txt`. Check the file's line endings (Windows vs. Unix) before use — hidden carriage-return characters (`\r`) break shell loops.
+**Starting point:** `metadata.txt` must have at least a `SampleID` column (E1…E7), and should be moved to `result/metadata.txt`. Check the file's line endings (Windows vs. Unix) before use hidden carriage-return characters (`\r`) break shell loops.
 
 ---
 
