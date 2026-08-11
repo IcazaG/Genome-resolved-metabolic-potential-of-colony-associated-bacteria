@@ -2,7 +2,7 @@
 #SBATCH --job-name=trnascan
 #SBATCH --output=trnascan%j.out
 #SBATCH --error=trnascan%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
