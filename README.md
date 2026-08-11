@@ -19,7 +19,7 @@
 
 ---
 
-## 📋 Table of contents
+## Table of contents
 
 - [How to use this guide](#-how-to-use-this-guide)
 - [0. Experimental design](#0-experimental-design-what-samples-are-being-analyzed)
@@ -40,9 +40,9 @@
 
 ---
 
-## 📖 How to use this guide
+## How to use this guide
 
-This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). This is **not** a script to copy and paste without thinking — each section explains **what** is done, **with which tool**, **with which exact parameters**, and **why**, so that methodological decisions (for example, choosing MEGAHIT over metaSPAdes) are justified and reproducible by a third party.
+This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs).
 
 ---
 
@@ -73,7 +73,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 **Requirements**
 
-- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥200 GB RAM (recommended for metaSPAdes) and a multi-core CPU
+- [ ] HPC cluster with job scheduler (here: NLHPC/SLURM), or a Linux server with ≥300 GB RAM (recommended for metaSPAdes) and a multi-core CPU (24 CPU)
 - [ ] Miniconda/Anaconda, with a **separate conda environment per tool** to avoid dependency conflicts
 - [ ] A reference database directory (`db/`) containing:
   - human reference genome **hg38** (KneadData)
@@ -109,8 +109,6 @@ meta/
 
 **What it does:** trims sequencing adapters and low-quality bases from read ends, and discards reads that become too short after trimming. Run independently per sample (E1–E7), producing HTML/JSON reports for visual QC inspection before/after filtering.
 
-**Why these parameters:** Phred 20 ≈ 1% base-calling error probability, a widely accepted metagenomics standard; 50 bp minimum avoids retaining fragments too short to reliably map or assemble.
-
 ---
 
 ## 3. Host decontamination (KneadData + Bowtie2, hg38)
@@ -125,7 +123,7 @@ meta/
 **Expected output:** per sample, a "clean" FASTQ pair, standardized as `{sample}_1.clean.fastq` / `{sample}_2.clean.fastq`.
 
 > [!TIP]
-> Generate a read-count summary table across stages (raw → filtered → decontaminated) — useful for supplementary material.
+> Generate a read-count summary table across stages (raw → filtered → decontaminated) 
 
 ---
 
