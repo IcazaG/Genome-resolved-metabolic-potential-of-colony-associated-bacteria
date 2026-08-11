@@ -1,237 +1,223 @@
-#!/usr/bin/env bash
-###############################################################################
-# Metagenomic Assembly Pipeline
-# Adapted from the EasyMetagenome Pipeline
-#
-# Author:       Gonzalo Icaza
-# Affiliation:  Alexandrium catenella Monitoring Program
-#               Universidad San Sebastián, Lago Panguipulli 1390, Puerto Montt, Chile
-# Environment:  CentOS 
-# Executed on:  NLHPC (Laboratorio Nacional de Computación de Alto Rendimiento)
-#               Centro de Modelamiento Matemático (CMM), Universidad de Chile
-# Reference:    Bai et al. 2025. https://doi.org/10.1002/imt2.70001
-#
-# Description:
-#   End-to-end workflow for shotgun metagenomic data: raw read transfer,
-#   quality control, host decontamination, and de novo assembly
-#   (MEGAHIT / metaSPAdes) with QUAST-based assembly evaluation.
-#
-# Samples:
-#   Seven Microcystis aeruginosa enrichment passages (E1–E7), listed in
-#   result/metadata.txt. All steps below are metadata-driven (via the
-#   SampleID column), so no sample names are hardcoded in the script.
-###############################################################################
+# Methodological Guide: Metagenome Assembly, Binning, and Annotation
+### *Microcystis aeruginosa* Enrichment Cultures (E1–E7)
 
-set -euo pipefail
+**Author:** Gonzalo Icaza
+**Affiliation:** *Alexandrium catenella* Surveillance Program, Universidad San Sebastián, Puerto Montt, Chile
+**Computing infrastructure:** NLHPC (National Laboratory for High Performance Computing), Centro de Modelamiento Matemático (CMM), Universidad de Chile
+**Base pipeline:** Adapted from EasyMetagenome (Bai et al., 2025) — https://doi.org/10.1002/imt2.70001
+**Associated manuscript:** Icaza et al. (2026)
 
-###############################################################################
-# 1. SETUP
-###############################################################################
+---
 
-# Conda installation directory
-soft=~/miniconda3
+## How to use this guide
 
-# Reference database directory
-db=~/db
+This document describes, step by step, how anyone with access to an HPC cluster and basic command-line skills can replicate the full bioinformatic workflow: from raw sequencing reads to functionally annotated, phylogenetically validated metagenome-assembled genomes (MAGs). This is not a script to copy and paste without thinking — each section explains **what is done, with which tool, with which exact parameters, and why**, so that methodological decisions (for example, choosing MEGAHIT over metaSPAdes) are justified and reproducible by a third party.
 
-# Working directory
-wd=~/meta
+---
 
-mkdir -p "$wd" && cd "$wd"
-mkdir -p seq temp result
+## 0. Experimental design: what samples are being analyzed
 
-# Add software/scripts to PATH
-export PATH="$soft/bin:$soft/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$db/EasyMicrobiome/linux:$db/EasyMicrobiome/script"
-echo "$PATH"
+- The analysis covers **seven enrichment cultures** of *Microcystis aeruginosa* (E1–E7), each listed as a row in `result/metadata.txt` under the `SampleID` column.
+- **E3 is a technical re-sequencing replicate of E2**, and **E5 is a technical re-sequencing replicate of E4**. This means E3 and E5 come from the **same genomic DNA extract** as E2 and E4, respectively — they were simply re-sequenced (a repeat sequencing run of the same library), not independent biological cultures or extractions.
+- **Analysis rule:** E3 and E5 must **not** be treated as independent biological replicates in any comparison *across* cultures. If E1, E2, E4, E6, and E7 are compared as five biological replicates, E3 and E5 are excluded from that count.
+- **Exception:** for the co-assembly (joint assembly), **all seven read sets are pooled together**, because the goal at that stage is to maximize sequencing depth and genome coverage, not to perform statistical inference between groups.
+- **Metadata-driven design:** the entire workflow reads the sample list from `result/metadata.txt` (`SampleID` column) rather than having sample names hardcoded in the code. This lets anyone reuse the workflow on a different sample set simply by editing that file.
 
-###############################################################################
-# 2. METADATA AND RAW SEQUENCE FILES
-###############################################################################
+---
 
-mv metadata.txt result/metadata.txt
+## 1. Environment setup
 
-# Inspect line-ending format (^I = tab, $ = Unix newline, ^M$ = Windows, ^M = Mac)
-cat -A result/metadata.txt
+**What you need:**
+- Access to a cluster with a job scheduler (in this case NLHPC/SLURM) or a Linux server with sufficient RAM (≥200 GB recommended for metaSPAdes) and a multi-core CPU.
+- Miniconda/Anaconda installed, with a separate conda environment per tool (this avoids dependency conflicts between bioinformatics packages).
+- A reference database directory (`db/`) containing: the human reference genome hg38 (for KneadData), eggNOG v5.0.2, dbCAN2/CAZyDB, CARD, Kraken2 PlusPF-16, GTDB, the Bakta v6.0 database, KOfam profiles, and a curated UniProt reference set for PufM.
 
-# Convert Windows/Mac line endings to Unix
-sed -i 's/\r//' result/metadata.txt
-cat -A result/metadata.txt
+**Recommended folder structure:**
 
-# Inspect raw file sizes
-ls -lsh seq/*.fq.gz
+```
+meta/
+├── seq/       -> raw reads (.fq.gz), R1/R2 pairs per sample
+├── temp/      -> intermediate files (can be deleted once finished)
+├── result/    -> final results, tables, figures, metadata.txt
+└── pipeline.sh (or notes from this document)
+```
 
-# Basic sequence statistics
-conda activate kneaddata
-conda install -c conda-forge -c bioconda seqkit -y
+**Starting point:** the `metadata.txt` file must have at least a `SampleID` column with the sample identifiers (E1…E7), and should be moved to `result/metadata.txt`. It is worth checking the file's line endings (Windows vs. Unix) before use, since hidden carriage-return characters (`\r`) break shell loops.
 
-seqkit version
-time seqkit stat seq/*.fq.gz > result/seqkit.txt
-cat result/seqkit.txt
+---
 
-# Example single-sample preview
-i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
-zless "seq/${i}_1.fq.gz" | head -n4
+## 2. Read quality control (fastp)
 
-###############################################################################
-# Working directory structure
-#
-# ├── pipeline.sh
-# ├── result          -> key output files, formatted figures, metadata.txt
-# │   └── metadata.txt
-# ├── seq              -> raw sequence files to be analyzed
-# │   ├── E1_1.fq.gz
-# │   ├── ...
-# │   └── E7_2.fq.gz
-# └── temp             -> temporary/intermediate files
-###############################################################################
+**Tool:** fastp v0.23.0 (Chen et al., 2018)
+**Parameters:** minimum Phred quality of 20, minimum read length of 50 bp.
 
-###############################################################################
-# 3. QUALITY CONTROL (fastp)
-###############################################################################
+**What it does:** trims sequencing adapters and low-quality bases from the ends of reads, and discards reads that become too short after trimming. It is run independently for each of the seven samples (E1–E7), producing individual HTML/JSON reports that allow visual inspection of quality before and after filtering.
 
-mkdir -p temp/qc result/qc
-fastp --version
+**Why these parameters:** a Phred 20 threshold corresponds to a 1% base-calling error probability, a widely accepted standard in metagenomics; 50 bp as a minimum length avoids retaining fragments too short to reliably map or assemble.
 
-# for Single-sample QC
-i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
-fastp -i "seq/${i}_1.fq.gz" -I "seq/${i}_2.fq.gz" \
-    -o "temp/qc/${i}_1.fastq" -O "temp/qc/${i}_2.fastq"
+---
 
-# or Batch processing (parallel, -j = number of concurrent samples)
-time tail -n+2 result/metadata.txt | cut -f1 | rush -j 2 \
-    "fastp -i seq/{1}_1.fq.gz -I seq/{1}_2.fq.gz \
-    -j temp/qc/{1}_fastp.json -h temp/qc/{1}_fastp.html \
-    -o temp/qc/{1}_1.fastq  -O temp/qc/{1}_2.fastq \
-    > temp/qc/{1}.log 2>&1"
+## 3. Host decontamination (KneadData + Bowtie2, hg38)
 
-# Summarize QC results (raw vs. clean read counts)
-echo -e "SampleID\tRaw\tClean" > temp/fastp
-for i in $(tail -n+2 result/metadata.txt | cut -f1); do
-    echo -e -n "$i\t" >> temp/fastp
-    grep 'total reads' "temp/qc/${i}.log" | uniq | cut -f2 -d ':' | tr '\n' '\t' >> temp/fastp
-    echo "" >> temp/fastp
-done
+**Tools:** KneadData v0.12.4, with Bowtie2 (Langmead & Salzberg, 2012) as the mapping engine.
+**Reference:** human genome hg38.
 
-sed -i 's/ //g;s/\t$//' temp/fastp
+**What it does:** maps the filtered reads against the human reference genome and removes any read that aligns to it, leaving only reads of non-human (microbial) origin. This is relevant even in environmental/culture samples, since laboratory handling can introduce trace human contamination.
 
-# Sort summary according to metadata order
-awk 'BEGIN{FS=OFS="\t"} NR==FNR{a[$1]=$0} NR>FNR{print a[$1]}' temp/fastp result/metadata.txt \
-    > result/qc/fastp.txt
+**Expected output:** for each sample, a pair of "clean" FASTQ files (concordant pairs, free of host contamination), standardized to a uniform naming scheme (`{sample}_1.clean.fastq`, `{sample}_2.clean.fastq`) for downstream steps.
 
-cat result/qc/fastp.txt
+**Verification:** it is worth generating a summary table of read counts at each stage (raw → filtered → decontaminated) to document how many reads were lost at each step — information typically reported in supplementary material.
 
-###############################################################################
-# 4. HOST READ REMOVAL (KneadData)
-###############################################################################
-# KneadData uses Bowtie2 to align reads against the host genome, then filters
-# out host-derived reads prior to downstream analysis.
+---
 
-mkdir -p temp/hr
-conda activate kneaddata
-kneaddata --version   # v0.12.4
+## 4. Pooled co-assembly: MEGAHIT vs. metaSPAdes comparison
 
-# Single-sample host removal
-i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
-time kneaddata -i1 "temp/qc/${i}_1.fastq" -i2 "temp/qc/${i}_2.fastq" \
-    -o temp/hr \
-    --bypass-trim --bypass-trf --reorder \
-    --bowtie2-options '--very-sensitive --dovetail' \
-    -db "${db}/kneaddata/human/hg_39" \
-    --remove-intermediate-output -v -t 3
+This is the most methodologically delicate step in the workflow, because it involves a decision (which assembler to use) that must be justified with data, not assumed in advance.
 
-# Batch host removal
-# NOTE: this step can require up to ~5x the space of the original data
-time tail -n+2 result/metadata.txt | cut -f1 | rush -j 2 \
-    "kneaddata \
-    -i1 temp/qc/{1}_1.fastq -i2 temp/qc/{1}_2.fastq \
-    -o temp/hr/ \
-    --bypass-trim --bypass-trf --reorder \
-    --bowtie2-options '--very-sensitive --dovetail' \
-    -db ${db}/kneaddata/human/hg_39 \
-    --remove-intermediate-output -v -t 3"
+**Design:** the clean reads from all **seven** samples (E1–E7) are pooled and assembled **jointly as a single combined input** — there is no per-sample or per-replicate assembly. This maximizes coverage depth for reconstructing low-abundance genomes.
 
-# Check output file sizes (* = any characters, ? = single character)
-ls -shtr temp/hr/*_paired_?.fastq
+**Assembler 1 — MEGAHIT v1.2.9:** fast and memory-efficient; receives the R1/R2 reads of all samples as comma-separated lists.
 
-# Simplify filenames
-# Ubuntu:
-#   rename 's/_1_kneaddata_paired//' temp/hr/*.fastq
-# CentOS (cluster OS):
-rename '_1_kneaddata_paired' '' temp/hr/*.fastq
+**Assembler 2 — metaSPAdes v3.15.0:** typically produces higher local assembly quality, but requires considerably more memory and time; receives the reads as repeated `-1`/`-2` pairs per sample.
 
-# Summarize host-removal results
-kneaddata_read_count_table --input temp/hr --output temp/kneaddata.txt
+**Comparative evaluation — QUAST:** both assemblies are evaluated with QUAST to compare standard metrics (N50, auN, maximum contig length, number of contigs).
 
-# Extract key columns from the summary
-cut -f 1,2,5,6 temp/kneaddata.txt | sed 's/_1_kneaddata//' > result/qc/sum.txt
-csvtk -t pretty result/qc/sum.txt
+**Selection criterion (applied in this study):** **MEGAHIT** was selected. Although metaSPAdes achieved a marginally higher N50 (2,477 bp vs. 2,393 bp), MEGAHIT produced:
+- a substantially higher auN (40,629 vs. 37,103),
+- a longer maximum contig (1,377,776 bp vs. 1,006,773 bp),
+- and approximately 3.6-fold fewer unfiltered raw contigs (414,528 vs. 1,485,791),
 
-# Verify paired-end read ID consistency
-i=$(tail -n+2 result/metadata.txt | cut -f1 | head -n1)
-paste <(head -n40 "temp/hr/${i}_1.fastq" | grep @) \
-      <(head -n40 "temp/hr/${i}_2.fastq" | grep @)
+indicating lower overall assembly fragmentation. The full QUAST comparison and per-sample read statistics are documented in supplementary material (Table S6).
 
-# Clean up large intermediate files
-# (using the absolute path avoids interference from custom shell aliases)
-/bin/rm -rf temp/hr/*contam* temp/hr/*unmatched* temp/hr/reformatted* temp/hr/_temp*
-ls -l temp/hr/
+**Final filter:** from the selected MEGAHIT assembly, only contigs ≥500 bp in length are retained for downstream steps.
 
-# Remove QC intermediates once host-removal results are confirmed
-rm temp/qc/*.fastq
+---
 
-conda deactivate
+## 5. Non-redundant gene catalogue (Prodigal + CD-HIT-EST) and quantification (Salmon)
 
-###############################################################################
-# 5. ASSEMBLY-BASED METHOD
-###############################################################################
+**Gene prediction — Prodigal v2.6.3**, in metagenomic mode (`-p meta`), on the filtered contigs. Only **complete** open reading frames (ORFs) (not truncated at either end) with a length ≥300 bp are retained, to avoid including partial gene fragments that could bias downstream functional analyses.
 
-## 5.1 Assembly with MEGAHIT
-conda activate megahit
-megahit -v   # MEGAHIT v1.2.9
+**Non-redundant catalogue — CD-HIT-EST:** clusters near-identical genes (95% nucleotide identity, 90% coverage of the shorter sequence) and keeps one representative sequence per cluster. This reduces redundancy arising from genes shared across samples or overlapping assembly fragments.
 
-# Remove existing output directory to allow re-running
-# /bin/rm -rf temp/megahit
+**Quantification — Salmon v1.10.3**, in metagenomic mode (`--meta`): an index is built from the non-redundant catalogue, and gene abundance (in TPM and raw read counts) is quantified separately for each of the seven samples, producing a sample × gene abundance matrix.
 
-/usr/bin/time -v megahit -t 3 \
-    -1 "$(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_1.fastq/' | tr '\n' ',' | sed 's/,$//')" \
-    -2 "$(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_2.fastq/' | tr '\n' ',' | sed 's/,$//')" \
-    -o temp/megahit
+---
 
-conda activate seqkit
-seqkit stat temp/megahit/final.contigs.fa
+## 6. Functional annotation of the gene catalogue
 
-# Preview first 6 lines, 60 characters each
-head -n6 temp/megahit/final.contigs.fa | cut -c1-60
+Three complementary databases are used to annotate genes in the non-redundant catalogue:
 
-# Remove intermediate contig files
-/bin/rm -rf temp/megahit/intermediate_contigs
+| Database | Tool | Version | What it provides |
+|---|---|---|---|
+| eggNOG v5.0.2 | eggNOG-mapper | v2.1.7 | Functional orthology: COG, KEGG (KO), CAZy |
+| CAZyDB | dbCAN2 (via DIAMOND blastp) | — | Cross-check of carbohydrate-active enzymes (CAZy) |
+| CARD | RGI | v6.0.5 | Antimicrobial resistance genes |
 
-## 5.2 Assembly with metaSPAdes (finer-scale alternative)
-mkdir -p temp/metaspades
-/usr/bin/time -v -o metaspades.py.log metaspades.py -t 3 -m 100 \
-    $(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_1.fastq/' | sed 's/^/-1 /' | tr '\n' ' ') \
-    $(tail -n+2 result/metadata.txt | cut -f1 | sed 's/^/temp\/hr\//;s/$/_2.fastq/' | sed 's/^/-2 /' | tr '\n' ' ') \
-    -o temp/metaspades
+**eggNOG-mapper** is run on the translated proteins of the non-redundant catalogue using DIAMOND as the search engine; the resulting KEGG/COG/CAZy annotations are combined with the Salmon abundance matrix (TPM) to obtain quantitative functional profiles per sample.
 
-# Check runtime (elapsed time) and memory usage (max resident set size)
-cat metaspades.py.log
+**dbCAN2** is used as an independent check of eggNOG's CAZy annotations, via direct DIAMOND search against CAZyDB.
 
-ls -sh temp/metaspades/contigs.fasta
-seqkit stat temp/metaspades/contigs.fasta
+**RGI/CARD** identifies antimicrobial resistance genes in the protein catalogue, reporting both strict and "loose" (more permissive) hits, useful for resistome surveillance in an environmental/aquaculture monitoring context.
 
-# Keep main assembly output, remove temporary directory
-mv temp/metaspades/contigs.fasta temp/metaspades.fa
-/bin/rm -rf temp/metaspades/
+---
 
-## 5.3 Assembly evaluation with QUAST
-mkdir -p result/megahit
+## 7. Taxonomic classification of reads (Kraken2, PlusPF-16 database)
 
-quast.py temp/megahit/final.contigs.fa \
-    -o result/megahit/quast -t 2
+**Tool:** Kraken2, PlusPF-16 reference database.
+**Nomenclature:** taxa are reported following **GTDB** nomenclature (not NCBI), for consistency with the later classification of MAGs.
 
-# Compare MEGAHIT vs. metaSPAdes assemblies
-quast.py --label "megahit,metaspades" \
-    temp/megahit/final.contigs.fa \
-    temp/metaspades.fa \
-    -o result/quast
+**What it does:** taxonomically classifies each read (R1/R2 pair) independently per sample, without going through assembly. This is a **complementary but distinct** line of evidence from MAG-based inference (Section 10): raw-read classification can detect a taxon from as few as several reads, whereas MAG-based inference requires that taxon's contigs to meet the completeness and contamination thresholds of a binned genome. Both lines of evidence should be treated separately when interpreting results, not combined as if they were equivalent.
 
+---
+
+## 8. Genome-resolved binning (metaWRAP) on the pooled co-assembly
+
+**Primary tool:** metaWRAP v1.3.2 (Uritskiy et al., 2018).
+**Integrated binners:** MetaBAT2 (Kang et al., 2019) and MaxBin2 (Wu et al., 2016) — no CONCOCT.
+
+**Design:** as with assembly, binning is performed **on the single pooled co-assembly**, using the clean reads from all seven samples as coverage input. There is no per-sample binning.
+
+**Bin refinement:** metaWRAP's `bin_refinement` module combines and refines the results from both binners, applying the quality thresholds of Bowers et al. (2017): **completeness ≥50%** and **contamination ≤10%**.
+
+---
+
+## 9. Dereplication (dRep, 99% ANI)
+
+**Tool:** dRep v3.2.0 (Olm et al., 2017).
+**Threshold:** 99% average nucleotide identity (ANI).
+
+**What it does:** among refined bins that essentially represent the same organism (high genomic similarity), only the highest-quality one is kept, avoiding counting the same genome more than once. The result in this study was **40 dereplicated MAGs**.
+
+---
+
+## 10. Quality assessment (CheckM2) and taxonomic placement (GTDB-Tk)
+
+**Genome quality — CheckM2** (Chklovski et al., 2023): estimates completeness and contamination of each MAG using a machine-learning model trained on single-copy marker genes.
+
+**Taxonomic placement — GTDB-Tk** (Chaumeil et al., 2022): assigns a standardized taxonomic classification (domain to species) according to the Genome Taxonomy Database, consistent with the nomenclature used for read classification (Section 7).
+
+**Selection of high-quality MAGs:** of the 40 dereplicated MAGs, only those with **>90% completeness and <5% contamination** are retained for metabolic reconstruction — a criterion that in this study left **19 high-quality MAGs**.
+
+---
+
+## 11. MAG-level functional annotation and MIMAG classification
+
+The following steps are applied in sequence to each of the high-quality MAGs:
+
+1. **Gene prediction — Prodigal v2.6.3** (metagenomic mode), per individual MAG.
+2. **Functional and ribosomal RNA annotation — Bakta v1.12.0** (database v6.0): in addition to annotating protein-coding genes, it identifies rRNA genes (5S, 16S, 23S) through Infernal-based covariance models.
+3. **Transfer RNA genes — tRNAscan-SE v2.0.13**, in bacterial search mode, to identify and type the tRNA genes present.
+4. **KEGG orthologue assignment — KofamScan v1.3.0**, retaining only hits that exceed each KO-specific adaptive score threshold (not a single generic fixed threshold).
+5. **Metabolic pathway completeness — KEGG-Decoder**, computed for core carbon, nitrogen, sulfur, and energy metabolism, plus photosynthesis.
+
+**Mandatory manual verification:** because KEGG-Decoder completeness scores are aggregate measures (they can give a false sense of completeness when several steps of a pathway overlap with central metabolism), **every reported pathway must be verified gene by gene** against the corresponding diagnostic enzymes in each genome's Bakta annotation. Pathways whose score depends on steps shared with central metabolism must be explicitly flagged as such in the results.
+
+**MIMAG "high-quality draft" classification:** a MAG can only be classified as a high-quality draft (Bowers et al., 2017) if, in addition to meeting the completeness/contamination thresholds, it presents:
+- all three rRNA genes (5S, 16S, and 23S), **and**
+- at least 18 of the 20 canonical tRNA types.
+
+This check combines Bakta's output (rRNA) with tRNAscan-SE's output (tRNA) for each MAG.
+
+**Comparison against the community catalogue:** the gene content of the MAGs is cross-checked against the KEGG orthologue abundances of the full gene catalogue (annotated with eggNOG-mapper, Section 6), which distinguishes genes absent from the recovered (binned) genomes from genes absent from the enrichment community as a whole.
+
+---
+
+## 12. Targeted phylogenetic validation of PufM orthology (K08929)
+
+Automated conserved-domain annotation can misassign genes to non-photosynthetic protein families when they share structural domains. For this reason, for a gene of special interest such as *pufM* (reaction-centre M chain), a targeted phylogenetic validation is performed instead of relying solely on automated annotation.
+
+**Step 1 — Candidate identification:** sequences annotated as K08929 (pufM) in MAGs belonging to Pseudomonadota are extracted (7 sequences in this study).
+
+**Step 2 — Alignment — MAFFT v7.525**, L-INS-i strategy (recommended for alignments with relatively few sequences requiring high local accuracy), combining the 7 candidate sequences with 30 curated UniProt reference sequences.
+
+**Step 3 — Alignment trimming — trimAl**, `-gappyout` heuristic, which removes columns with excessive gaps; in this study, 306 informative columns were retained.
+
+**Step 4 — Phylogenetic inference — IQ-TREE v3.1.3:** model selection by Bayesian Information Criterion (BIC) — resulting in the **Q.PFAM+F+R4** model —, with branch support estimated via 1,000 ultrafast bootstrap replicates and 1,000 SH-aLRT replicates.
+
+**Interpreting the resulting tree:** confirms (or refutes) whether the candidate sequences cluster phylogenetically with true PufM references, rather than with non-photosynthetic homologous proteins.
+
+**Nomenclature note:** reference sequences are cited under the NCBI nomenclature used by UniProt, while taxonomic groupings elsewhere in the manuscript follow GTDB — under which Betaproteobacteria is nested within Gammaproteobacteria. This distinction must be kept explicit when reporting results to avoid confusion between nomenclature systems.
+
+---
+
+## 13. Summary of expected results
+
+| Stage | Expected result in this study |
+|---|---|
+| Samples | 7 cultures (E1–E7); E3/E5 are technical replicates of E2/E4 |
+| Selected assembler | MEGAHIT (over metaSPAdes), contigs ≥500 bp |
+| Dereplicated MAGs (99% ANI) | 40 |
+| High-quality MAGs (>90%/<5%) | 19 |
+| Validated pufM genes (K08929) | 7, in Pseudomonadota |
+| Phylogenetic model (BIC) | Q.PFAM+F+R4 |
+| Alignment columns after trimming | 306 |
+
+---
+
+## 14. Reproducibility notes
+
+- **Always record the exact version of each tool** (via `--version` or equivalent) at the start of each step; bioinformatic results can vary between versions even with identical parameters.
+- **Never mix technical and biological replicates** in any statistical comparison across cultures (see Section 0).
+- **Document selection decisions** (such as the choice of assembler) with the comparative metrics that support them, not just the final outcome.
+- **Manually verify** any aggregate score (such as those from KEGG-Decoder) against individual gene-level evidence before reporting it as a "complete" metabolic pathway.
+- Maintain **consistent taxonomic nomenclature** (GTDB vs. NCBI) throughout the manuscript, explicitly flagging which one is used where.
