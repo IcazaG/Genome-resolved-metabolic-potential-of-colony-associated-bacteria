@@ -2,11 +2,11 @@
 #SBATCH --job-name=metaspades
 #SBATCH --output=metaspades%j.out
 #SBATCH --error=metaspades%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=200G
+#SBATCH --mem=300G
 #SBATCH --time=12:00:00
 
 export PATH="$HOME/miniconda3/bin:$PATH"
