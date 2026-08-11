@@ -2,7 +2,7 @@
 #SBATCH --job-name=fastp
 #SBATCH --output=fastp%j.out
 #SBATCH --error=fastp%j.err
-#SBATCH --partition=debug
+#SBATCH --partition=XXXXX
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
