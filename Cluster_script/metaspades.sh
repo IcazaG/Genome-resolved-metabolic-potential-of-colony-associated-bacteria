@@ -11,11 +11,11 @@
 
 export PATH="$HOME/miniconda3/bin:$PATH"
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
-conda activate metawrap   # metaSPAdes suele estar en el entorno metawrap
+conda activate metawrap   # metaSPAdes is usually in the metawrap environment
 
 cd ~/meta
 
-# Concatenar lecturas (metaSPAdes necesita un solo par de archivos)
+# Concatenate reads (metaSPAdes requires a single pair of files)
 cat temp/hr/*_1.fastq > temp/all_1.fastq
 cat temp/hr/*_2.fastq > temp/all_2.fastq
 
@@ -25,4 +25,4 @@ metaspades.py -t 16 -m 200 \
 
 rm temp/all_1.fastq temp/all_2.fastq
 
-echo "metaSPAdes finalizado"
+echo "metaSPAdes finished"
