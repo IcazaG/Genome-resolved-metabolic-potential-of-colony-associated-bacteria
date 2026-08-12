@@ -253,7 +253,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 **Design:** binning (`metawrap_binning.sh`) runs on the **single pooled co-assembly**, using all seven samples' reads as coverage input — no per-sample binning.
 
-**Refinement (`metawrap_refine.sh`):** thresholds per Bowers et al. (2017):
+**Refinement (`metawrap_refine.sh`):** 
 - Completeness **≥ 50%**
 - Contamination **≤ 10%**
 
