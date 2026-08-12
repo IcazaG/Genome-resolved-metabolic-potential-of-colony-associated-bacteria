@@ -21,4 +21,4 @@ rename 'bin' 'MAG' temp/drep_in/bin.*
 
 dRep dereplicate temp/drep99/ -g temp/drep_in/*.fa -sa 0.99 -nc 0.30 -comp 50 -con 10 -p 16
 
-echo "dRep finalizado"
+echo "dRep finished"
