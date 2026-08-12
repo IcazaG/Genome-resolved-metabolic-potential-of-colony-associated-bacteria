@@ -16,7 +16,7 @@ conda activate kofamscan
 cd ~/meta
 
 mkdir -p temp/mag_genes
-# Predecir genes de cada MAG con Prodigal
+# Predict genes from each MAG with Prodigal
 for mag in result/hq_mags/*.fa; do
     base=$(basename $mag .fa)
     prodigal -i $mag -d temp/mag_genes/${base}_genes.fna -o temp/mag_genes/${base}_genes.gff -p single -f gff
@@ -27,4 +27,4 @@ for mag in result/hq_mags/*.fa; do
                     temp/mag_genes/${base}_genes.fna
 done
 
-echo "KofamScan finalizado"
+echo "KofamScan finished"
