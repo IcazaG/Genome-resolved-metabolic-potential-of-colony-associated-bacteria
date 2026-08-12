@@ -15,8 +15,8 @@ conda activate metawrap
 
 cd ~/meta
 
-# Utiliza el ensamblaje ≥500 bp de MEGAHIT
+# Uses the ≥500 bp assembly from MEGAHIT
 metawrap binning -o temp/binning -t 16 -a temp/assembly_500.fa \
     --metabat2 --maxbin2 temp/hr/*.fastq
 
-echo "MetaWRAP binning finalizado"
+echo "MetaWRAP binning finished"
