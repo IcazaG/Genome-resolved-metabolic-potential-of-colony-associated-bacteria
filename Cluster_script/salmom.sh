@@ -26,4 +26,4 @@ done
 salmon quantmerge --quants temp/salmon/*.quant -o result/gene_TPM.tsv
 sed -i '1 s/.quant//g' result/gene_TPM.tsv
 
-echo "Salmon finalizado"
+echo "Salmon finished"
