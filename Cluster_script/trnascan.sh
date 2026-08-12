@@ -20,4 +20,4 @@ for mag in result/hq_mags/*.fa; do
     tRNAscan-SE -B -o result/trnascan/${base}_tRNA.out --thread 8 $mag
 done
 
-echo "tRNAscan-SE finalizado"
+echo "tRNAscan-SE finished"
