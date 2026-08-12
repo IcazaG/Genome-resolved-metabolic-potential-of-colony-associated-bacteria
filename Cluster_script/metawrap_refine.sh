@@ -19,4 +19,4 @@ metawrap bin_refinement -o temp/bin_refinement \
     -A temp/binning/metabat2_bins/ -B temp/binning/maxbin2_bins/ \
     -c 50 -x 10 -t 16
 
-echo "MetaWRAP refinement finalizado"
+echo "MetaWRAP refinement finished"
