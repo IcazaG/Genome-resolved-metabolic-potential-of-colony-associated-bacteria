@@ -23,4 +23,4 @@ gtdbtk classify_wf --genome_dir temp/drep99/dereplicated_genomes \
 gtdbtk infer --msa_file result/gtdbtk/align/tax.bac120.user_msa.fasta.gz \
     --out_dir result/gtdbtk_tree --prefix tax --cpus 16
 
-echo "GTDB-Tk finalizado"
+echo "GTDB-Tk finished"
