@@ -15,10 +15,10 @@ conda activate kegg_decoder
 
 cd ~/meta
 
-# Requiere que los resultados de KofamScan se conviertan a un archivo de KOs por genoma.
-# KEGG-Decoder espera una carpeta con archivos .ko (uno por genoma).
-# Suponiendo que ya los tienes en result/kofamscan/convertidos a .ko
+# Requires that KofamScan results be converted to a file of KOs per genome.
+# KEGG-Decoder expects a folder with .ko files (one per genome).
+# result/kofamscan/converted to .ko
 
 KEGG-decoder.pl -i result/kofamscan/ko_files/ -o result/kegg_decoder_output
 
-echo "KEGG-Decoder finalizado"
+echo "KEGG-Decoder finished"
