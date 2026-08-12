@@ -24,12 +24,12 @@ for i in $(tail -n+2 result/metadata.txt | cut -f1); do
             --report temp/kraken2/${i}.report --output temp/kraken2/${i}.output
 done
 
-# Bracken (especie, S)
+# Bracken (species, S)
 for i in $(tail -n+2 result/metadata.txt | cut -f1); do
     bracken -d ${DB_KRAKEN} -i temp/kraken2/${i}.report -r 150 -l S -t 0 -o temp/bracken/${i}.bracken
 done
 
-# Combinar tablas (se puede usar combine_mpa.py o el script de EasyMetagenome)
-# ...
+# Combine tables (you can use combine_mpa.py or merge_metaphlan_tables.py)
+# ... 
 
-echo "Kraken2 + Bracken finalizado"
+echo "Kraken2 + Bracken finished"
