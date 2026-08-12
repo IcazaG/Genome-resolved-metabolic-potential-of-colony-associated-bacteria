@@ -15,7 +15,7 @@ conda activate kneaddata
 
 cd ~/meta
 
-# Base de datos de humano (hg38)
+# Human database (hg38)
 DB_HUMAN=~/db/kneaddata/human_genome/hg38
 
 for i in $(tail -n+2 result/metadata.txt | cut -f1); do
@@ -27,7 +27,7 @@ for i in $(tail -n+2 result/metadata.txt | cut -f1); do
               -db ${DB_HUMAN}
 done
 
-# Mover las lecturas limpias a temp/hr/
+# Move clean reads to temp/hr/
 mkdir -p temp/hr
 for i in $(tail -n+2 result/metadata.txt | cut -f1); do
     mv temp/kneaddata_out/${i}_1_kneaddata_paired_1.fastq temp/hr/${i}_1.fastq
@@ -35,4 +35,4 @@ for i in $(tail -n+2 result/metadata.txt | cut -f1); do
 done
 rm -rf temp/kneaddata_out
 
-echo "KneadData finalizado"
+echo "KneadData finished"
