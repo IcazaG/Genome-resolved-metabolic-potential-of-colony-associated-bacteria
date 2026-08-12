@@ -55,7 +55,7 @@
 │   └── README.md
 ├── Pipeline/                    # PufM phylogenetic validation (Section 12) + orchestration notes
 ├── LICENSE
-└── README.md                    # This file
+└── README.md                    
 ```
 
 ## Table of contents
