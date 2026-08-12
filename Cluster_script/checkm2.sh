@@ -18,4 +18,4 @@ cd ~/meta
 checkm2 predict --threads 16 --input temp/drep99/dereplicated_genomes/ \
                 --output-directory result/checkm2_output
 
-echo "CheckM2 finalizado"
+echo "CheckM2 finished"
