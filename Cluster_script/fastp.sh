@@ -9,17 +9,17 @@
 #SBATCH --mem=32G
 #SBATCH --time=00:30:00
 
-# 1. Cargar conda
+# 1. Load conda
 export PATH="$HOME/miniconda3/bin:$PATH"
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 
-# 2. Activar entorno (fastp está en kneaddata)
+# 2. Activate environment (fastp is in kneaddata)
 conda activate kneaddata
 
-# 3. Ir al directorio del proyecto
+# 3. Go to project directory
 cd ~/meta
 
-# 4. Ejecutar fastp para todas las muestras
+# 4. Run fastp for all samples
 for i in $(tail -n+2 result/metadata.txt | cut -f1); do
     fastp -i seq/${i}_1.fq.gz -I seq/${i}_2.fq.gz \
           -o temp/fastp/${i}_1.fastq -O temp/fastp/${i}_2.fastq \
@@ -27,4 +27,4 @@ for i in $(tail -n+2 result/metadata.txt | cut -f1); do
           --thread 8
 done
 
-echo "fastp finalizado"
+echo "fastp finished"
