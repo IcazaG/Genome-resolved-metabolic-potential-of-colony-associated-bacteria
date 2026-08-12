@@ -14,7 +14,7 @@
 > **Affiliation:** *Alexandrium catenella* Surveillance Program · Universidad San Sebastián · Puerto Montt, Chile
 > **Computing infrastructure:** NLHPC (National Laboratory for High Performance Computing), Centro de Modelamiento Matemático (CMM), Universidad de Chile
 > **Base pipeline:** Adapted from [EasyMetagenome](https://doi.org/10.1002/imt2.70001) (Bai et al., 2025)
-> **Associated manuscript:** Rocha et al. (2026)
+> **Associated manuscript:** Icaza et al. (2026)
 
 ---
 
