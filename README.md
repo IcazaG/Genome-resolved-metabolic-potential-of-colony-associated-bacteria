@@ -134,7 +134,7 @@ meta/
 └── (scripts invoked from Cluster_script/, Bakta_batch/, Pipeline/, elLoto_verification/)
 ```
 
-**Starting point:** `metadata.txt` must have at least a `SampleID` column (E1…E7), and should be moved to `result/metadata.txt`. Check the file's line endings (Windows vs. Unix) before use — hidden carriage-return characters (`\r`) break shell loops.
+**Starting point:** `metadata.txt` must have at least a `SampleID` column (E1…E7), and should be moved to `result/metadata.txt`. Check the file's line endings (Windows vs. Unix) before use hidden carriage-return characters (`\r`) break shell loops.
 
 ---
 
@@ -183,7 +183,7 @@ meta/
 | MEGAHIT | `v1.2.9` | Fast, memory-efficient | `megahit.sh` |
 | metaSPAdes | `v3.15.0` | Higher local quality, much more RAM/time | `metaspades.sh` |
 
-**Evaluation:** both assemblies compared with **QUAST** (`quast.sh`) — N50, auN, max contig length, contig count.
+**Evaluation:** both assemblies compared with **QUAST** (`quast.sh`)  N50, auN, max contig length, contig count.
 
 **Selection — MEGAHIT was chosen.** Although metaSPAdes had a marginally higher N50:
 
@@ -222,7 +222,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 - **eggNOG-mapper** runs on translated NR-catalogue proteins (DIAMOND engine); annotations combined with Salmon TPM → quantitative functional profiles per sample.
 - **dbCAN2** independently verifies eggNOG's CAZy calls via direct DIAMOND search.
-- **RGI/CARD** reports both strict and "loose" AMR hits — useful for resistome surveillance in environmental/aquaculture contexts.
+- **RGI/CARD** reports both strict and "loose" AMR hits  useful for resistome surveillance in environmental/aquaculture contexts.
 
 > [!NOTE]
 > dbCAN2 and RGI/CARD calls are not wired to a dedicated script in `Cluster_script/` in the current repository layout — run them alongside `eggnog.sh`, or add `dbcan2.sh` / `rgi.sh` following the same pattern, if you need them in your own run.
