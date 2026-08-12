@@ -18,7 +18,7 @@ cd ~/meta
 cd-hit-est -i temp/genes_complete.fna -o result/NR_genes.fna \
            -c 0.95 -aS 0.9 -G 0 -g 0 -T 16 -M 0
 
-# Traducir a proteínas
+# Translate to proteins
 seqkit translate --trim result/NR_genes.fna > result/NR_proteins.faa
 
-echo "CD-HIT finalizado"
+echo "CD-HIT finished"
