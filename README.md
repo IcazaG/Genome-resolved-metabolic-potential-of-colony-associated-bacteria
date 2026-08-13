@@ -87,7 +87,7 @@ This document describes, step by step, how anyone with access to an HPC cluster 
 
 ## 0. Experimental design: what samples are being analyzed
 
-- The analysis covers **seven enrichment cultures** of *Microcystis aeruginosa* (`E1`–`E7`), each listed as a row in `result/metadata.txt` under the `SampleID` column.
+- The analysis covers **5 enrichment cultures**  (`E1`–`E7`), each listed as a row in `result/metadata.txt` under the `SampleID` column.
 - **`E3` is a technical re-sequencing replicate of `E2`**, and **`E5` is a technical re-sequencing replicate of `E4`**. They come from the **same genomic DNA extract** as `E2` and `E4` respectively — simply re-sequenced (a repeat run of the same library) — not independent biological cultures or extractions.
 - **Analysis rule:** `E3` and `E5` must **not** be treated as independent biological replicates in any comparison *across* cultures. If `E1`, `E2`, `E4`, `E6`, `E7` are compared as five biological replicates, `E3` and `E5` are excluded from that count.
 - **Exception:** for co-assembly, **all seven read sets are pooled together**, since the goal there is maximizing sequencing depth/coverage, not statistical inference between groups.
