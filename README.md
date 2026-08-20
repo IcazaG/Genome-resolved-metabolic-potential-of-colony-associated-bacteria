@@ -75,7 +75,6 @@
 - [11. MAG-level annotation, MIMAG + manual verification](#11-mag-level-functional-annotation-mimag-classification-and-manual-verification)
 - [12. PufM phylogenetic validation](#12-targeted-phylogenetic-validation-of-pufm-orthology-k08929)
 - [13. Summary of expected results](#13-summary-of-expected-results)
-- [14. Reproducibility notes](#14-reproducibility-notes)
 
 ---
 
