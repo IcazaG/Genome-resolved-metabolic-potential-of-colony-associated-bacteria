@@ -74,7 +74,6 @@
 - [10. Quality (CheckM2) + taxonomy (GTDB-Tk)](#10-quality-assessment-checkm2-and-taxonomic-placement-gtdb-tk)
 - [11. MAG-level annotation, MIMAG + manual verification](#11-mag-level-functional-annotation-mimag-classification-and-manual-verification)
 - [12. PufM phylogenetic validation](#12-targeted-phylogenetic-validation-of-pufm-orthology-k08929)
-- [13. Summary of expected results](#13-summary-of-expected-results)
 
 ---
 
