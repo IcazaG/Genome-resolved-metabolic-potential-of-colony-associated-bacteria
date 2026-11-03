@@ -202,7 +202,7 @@ MEGAHIT's higher auN, longer maximum contig, and far fewer raw contigs indicate 
 
 **Scripts:** [`Cluster_script/prodigal.sh`](Cluster_script/prodigal.sh) · [`Cluster_script/cdhit.sh`](Cluster_script/cdhit.sh) · [`Cluster_script/salmom.sh`](Cluster_script/salmom.sh)
 
-1. **Gene prediction  Prodigal `v2.6.3`** (`prodigal.sh`), metagenomic mode (`-p meta`). Retain only **complete** ORFs (not truncated at either end), **≥300 bp**.
+1. **Gene prediction  Prodigal `v2.6.3`** (`prodigal.sh`), single mode (`-p single`). Retain only **complete** ORFs (not truncated at either end), **≥300 bp**.
 2. **Non-redundant catalogue  CD-HIT-EST** (`cdhit.sh`): cluster at **95% nucleotide identity**, **90% coverage** of the shorter sequence; keep one representative per cluster.
 3. **Quantification  Salmon `v1.10.3`** (`salmom.sh`), metagenomic mode (`--meta`): index from the NR catalogue, quantify TPM and raw counts per sample → sample × gene abundance matrix.
 
