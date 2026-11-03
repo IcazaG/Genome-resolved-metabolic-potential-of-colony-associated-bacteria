@@ -19,7 +19,7 @@ mkdir -p temp/mag_genes
 # Predict genes from each MAG with Prodigal
 for mag in result/hq_mags/*.fa; do
     base=$(basename $mag .fa)
-    prodigal -i $mag -d temp/mag_genes/${base}_genes.fna -o temp/mag_genes/${base}_genes.gff -p single -f gff
+    prodigal -i $mag -a temp/mag_genes/${base}_genes.fna -o temp/mag_genes/${base}_genes.gff -p single -f gff
     exec_annotation -o result/kofamscan/${base}_kegg.txt \
                     --profile ~/db/kofam/profiles/ \
                     --ko-list ~/db/kofam/ko_list \
